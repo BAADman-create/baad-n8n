@@ -1,3 +1,6 @@
 
 # Local Airtable/Notion exports and helper scripts
 airtable-exports/
+
+# macOS Finder metadata
+.DS_Store
