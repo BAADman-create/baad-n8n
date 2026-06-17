@@ -1,0 +1,2983 @@
+{
+  "name": "Push Article Draft to Strapi",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a2adda5d-59ad-4914-9c2b-f3aea4f1e7a9",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblF0ghefGC2Bzh9K",
+          "mode": "list",
+          "cachedResultName": "Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblF0ghefGC2Bzh9K"
+        },
+        "options": {
+          "view": {
+            "__rl": true,
+            "value": "viwFdY9AOp4qLJPCA",
+            "mode": "list",
+            "cachedResultName": "Ready for Strapi",
+            "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblF0ghefGC2Bzh9K/viwFdY9AOp4qLJPCA"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e60995f9-8bc8-4ca1-bc58-10782df1f144",
+      "name": "Get Ready for Strapi Articles",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3744be0e-f1db-4f67-a395-bc9c3ecb7927",
+              "name": "airtableId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7c06de9c-ef87-4148-b898-118d55af5426",
+      "name": "Prepare Article for Strapi"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://baad-v2-project.onrender.com/api/news-articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "draft"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ $json.strapiPayload }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1616,
+        256
+      ],
+      "id": "74b6421f-9a0b-445c-99d5-492c6f284a24",
+      "name": "Create Strapi News Article",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wumAE7iEDEjTtbJ8",
+          "name": "Strapi – BAAD News"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const get = (key) => {\n  const v = $json[key];\n  return v !== undefined && v !== null ? v : '';\n};\n\nfunction normaliseNewsTopicCode(value) {\n  const raw = String(value || '').trim().toLowerCase();\n\n  const cleaned = raw\n    .replace(/&/g, 'and')\n    .replace(/[^a-z0-9]+/g, '_')\n    .replace(/^_+|_+$/g, '');\n\n  const map = {\n    obituary: 'obituary',\n    in_memoriam: 'obituary',\n    memorial: 'obituary',\n\n    restitution: 'restitution',\n    repatriation: 'restitution',\n\n    auction_result: 'auction_result',\n    auction_results: 'auction_result',\n    sale_result: 'auction_result',\n\n    auction_announcement: 'auction_announcement',\n    auction: 'auction_announcement',\n    sale: 'auction_announcement',\n\n    award: 'award',\n    awards: 'award',\n    prize: 'award',\n    prizes: 'award',\n    honour: 'award',\n    honor: 'award',\n\n    exhibition: 'exhibition_announcement',\n    exhibition_announcement: 'exhibition_announcement',\n    show: 'exhibition_announcement',\n\n    representation: 'representation_deal',\n    representation_deal: 'representation_deal',\n    gallery_representation: 'representation_deal',\n\n    appointment: 'appointment',\n    role_change: 'appointment',\n    new_role: 'appointment',\n    director_appointment: 'appointment',\n\n    firing: 'firing',\n    resignation: 'firing',\n    departure: 'firing',\n\n    gallery_opening: 'gallery_opening',\n    gallery_expansion: 'gallery_opening',\n    opening: 'gallery_opening',\n\n    gallery_closure: 'gallery_closure',\n    gallery_closing: 'gallery_closure',\n    closure: 'gallery_closure',\n\n    legal: 'legal',\n    lawsuit: 'legal',\n    lawsuits: 'legal',\n    policy: 'legal',\n    court: 'legal',\n\n    archaeology: 'archaeology',\n    discovery: 'archaeology',\n    archaeological_discovery: 'archaeology',\n\n    other: 'other',\n  };\n\n  return map[cleaned] || 'other';\n}\n\nfunction makeSlug(value) {\n  return String(value || '')\n    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '')\n    .slice(0, 160);\n}\n\nconst title =\n  $json.baad_title ||\n  get('BAAD Title') ||\n  get('SEO Title') ||\n  get('Title') ||\n  '';\n\nconst dek =\n  $json.baad_dek ||\n  get('BAAD Dek') ||\n  get('Dek') ||\n  get('Editor Summary') ||\n  '';\n\nconst body =\n  $json.baad_body ||\n  get('Body (BAAD Draft)') ||\n  get('Source Body / Summary') ||\n  '';\n\nconst newsTopicCode = normaliseNewsTopicCode(\n  get('News Topic Code') ||\n  get('News Topic') ||\n  'other'\n);\n\nconst existingSlug =\n  get('Strapi Slug') ||\n  get('Slug') ||\n  '';\n\nconst idSuffix = String($json.airtableId || $json.id || Date.now())\n  .toLowerCase()\n  .replace(/[^a-z0-9]+/g, '')\n  .slice(-6);\n\nlet slug = existingSlug || makeSlug(title || get('Title') || 'article');\n\nif (!slug) {\n  slug = `article-${idSuffix || Date.now()}`;\n} else if (!existingSlug && idSuffix) {\n  slug = `${slug}-${idSuffix}`;\n}\n\nconst strapiDocumentId =\n  get('Strapi Document ID') ||\n  get('Strapi Article ID') ||\n  '';\n\nreturn {\n  json: {\n    ...$json,\n    airtableId: $json.airtableId || $json.id,\n    strapiDocumentId,\n    strapiSlug: slug,\n    strapiPayload: {\n      title,\n      slug,\n      dek,\n      body,\n      newsTopicCode,\n      tags: [],\n    },\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "cf03afef-5307-41b3-b9b0-574a93685513",
+      "name": "Build Strapi Payload"
+    },
+    {
+      "parameters": {
+        "url": "https://baad-v2-project.onrender.com/api/news-articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=filters[slug][$eq]",
+              "value": "={{ $json.strapiSlug }}"
+            },
+            {
+              "name": "pagination[pageSize]",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "68ceb871-b57e-4cf9-8240-01631e15bc07",
+      "name": "Search Existing Strapi Article",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wumAE7iEDEjTtbJ8",
+          "name": "Strapi – BAAD News"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sourceItems = $items('Build Strapi Payload');\nconst sourceItem = sourceItems[$itemIndex];\n\nif (!sourceItem) {\n  throw new Error(`Could not find matching item from Build Strapi Payload for itemIndex=${$itemIndex}`);\n}\n\nconst original = sourceItem.json;\n\nconst found = Array.isArray($json.data) ? $json.data[0] : null;\n\nreturn {\n  json: {\n    ...original,\n\n    existingStrapiId: found?.id || null,\n    existingStrapiDocumentId: found?.documentId || null,\n    existingStrapiSlug: found?.slug || null,\n\n    // true means update existing Strapi article\n    // false means create a new Strapi article\n    shouldUpdate: !!found,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "07d96612-5ed1-4076-9082-41ddb2245a37",
+      "name": "Prepare Create or Update Decision"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "71adf165-b9a6-4370-80eb-2241bbd18198",
+              "leftValue": "={{ $json.shouldUpdate }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "0b02055f-7f31-4f06-aa34-ffd9e9f6f8a9",
+      "name": "IF Strapi Article Exists?"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://baad-v2-project.onrender.com/api/news-articles/{{ $json.existingStrapiDocumentId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status ",
+              "value": "draft"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ $json.strapiPayload }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1616,
+        -16
+      ],
+      "id": "37723808-46a6-42b0-947b-911128f63e83",
+      "name": "Update Strapi News Article",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wumAE7iEDEjTtbJ8",
+          "name": "Strapi – BAAD News"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblF0ghefGC2Bzh9K",
+          "mode": "list",
+          "cachedResultName": "Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblF0ghefGC2Bzh9K"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('IF Strapi Article Exists?').item.json.airtableId }}",
+            "Review Status": "Pushed to Strapi",
+            "Strapi Article ID": "={{ String($json.data.id) }}",
+            "Strapi Document ID": "={{ $json.data.documentId }}",
+            "Strapi Sync Status": "Synced",
+            "Strapi Slug": "={{ $json.data.slug }}",
+            "Last Strapi Sync At": "={{ new Date().toISOString() }}",
+            "Published in Strapi (CHK)": false
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dek",
+              "displayName": "Dek",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Body / Summary",
+              "displayName": "Source Body / Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Outlet",
+              "displayName": "Source Outlet",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source URL",
+              "displayName": "Source URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Article Sources",
+              "displayName": "Article Sources",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LLM Block (from Article Sources)",
+              "displayName": "LLM Block (from Article Sources)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Sources Combined (for LLM)",
+              "displayName": "Sources Combined (for LLM)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Design",
+                  "value": "Design"
+                },
+                {
+                  "name": "Art",
+                  "value": "Art"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Subcategory",
+              "displayName": "Subcategory",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Medium",
+              "displayName": "Medium",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Stage",
+              "displayName": "Stage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Marked for Regeneration",
+              "displayName": "Marked for Regeneration",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Editor Summary",
+              "displayName": "Editor Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "SEO Title",
+              "displayName": "SEO Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Meta Description",
+              "displayName": "Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tags",
+              "displayName": "Tags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "fashion",
+                  "value": "fashion"
+                },
+                {
+                  "name": "luxury",
+                  "value": "luxury"
+                },
+                {
+                  "name": "Exhibition",
+                  "value": "Exhibition"
+                },
+                {
+                  "name": "Museum",
+                  "value": "Museum"
+                },
+                {
+                  "name": "Gallery",
+                  "value": "Gallery"
+                },
+                {
+                  "name": "Auction",
+                  "value": "Auction"
+                },
+                {
+                  "name": "Acquisition",
+                  "value": "Acquisition"
+                },
+                {
+                  "name": "Deaccession",
+                  "value": "Deaccession"
+                },
+                {
+                  "name": "Appointment",
+                  "value": "Appointment"
+                },
+                {
+                  "name": "Award",
+                  "value": "Award"
+                },
+                {
+                  "name": "Lawsuit / Legal",
+                  "value": "Lawsuit / Legal"
+                },
+                {
+                  "name": "Commission",
+                  "value": "Commission"
+                },
+                {
+                  "name": "Residency",
+                  "value": "Residency"
+                },
+                {
+                  "name": "Grant / Funding",
+                  "value": "Grant / Funding"
+                },
+                {
+                  "name": "Biennial / Triennial",
+                  "value": "Biennial / Triennial"
+                },
+                {
+                  "name": "Art Fair",
+                  "value": "Art Fair"
+                },
+                {
+                  "name": "Art Festival",
+                  "value": "Art Festival"
+                },
+                {
+                  "name": "Preservation / Conservation",
+                  "value": "Preservation / Conservation"
+                },
+                {
+                  "name": "Controversy",
+                  "value": "Controversy"
+                },
+                {
+                  "name": "Obituary",
+                  "value": "Obituary"
+                },
+                {
+                  "name": "Announced",
+                  "value": "Announced"
+                },
+                {
+                  "name": "Opens",
+                  "value": "Opens"
+                },
+                {
+                  "name": "Closes",
+                  "value": "Closes"
+                },
+                {
+                  "name": "Extended",
+                  "value": "Extended"
+                },
+                {
+                  "name": "Touring",
+                  "value": "Touring"
+                },
+                {
+                  "name": "Call for Entries",
+                  "value": "Call for Entries"
+                },
+                {
+                  "name": "London",
+                  "value": "London"
+                },
+                {
+                  "name": "New York",
+                  "value": "New York"
+                },
+                {
+                  "name": "Los Angeles",
+                  "value": "Los Angeles"
+                },
+                {
+                  "name": "Paris",
+                  "value": "Paris"
+                },
+                {
+                  "name": "Lagos",
+                  "value": "Lagos"
+                },
+                {
+                  "name": "Accra",
+                  "value": "Accra"
+                },
+                {
+                  "name": "Amsterdam",
+                  "value": "Amsterdam"
+                },
+                {
+                  "name": "Rotterdam",
+                  "value": "Rotterdam"
+                },
+                {
+                  "name": "Chicago",
+                  "value": "Chicago"
+                },
+                {
+                  "name": "Atlanta",
+                  "value": "Atlanta"
+                },
+                {
+                  "name": "High Priority",
+                  "value": "High Priority"
+                },
+                {
+                  "name": "Needs Image",
+                  "value": "Needs Image"
+                },
+                {
+                  "name": "Follow Up Needed",
+                  "value": "Follow Up Needed"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Updated At",
+              "displayName": "Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dedupe Key",
+              "displayName": "Dedupe Key",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Article Type",
+              "displayName": "Article Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Announcement Date",
+              "displayName": "Announcement Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Thumbnail URL",
+              "displayName": "Thumbnail URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Body (BAAD Draft)",
+              "displayName": "Body (BAAD Draft)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Slug (FORMULA)",
+              "displayName": "Slug (FORMULA)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Read Link (FORMULA)",
+              "displayName": "Read Link (FORMULA)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Published in Strapi (CHK)",
+              "displayName": "Published in Strapi (CHK)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Artist / Entity Name(s)",
+              "displayName": "Artist / Entity Name(s)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image URL (Main)",
+              "displayName": "Image URL (Main)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords Found",
+              "displayName": "Keywords Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Matched Fields",
+              "displayName": "Matched Fields",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Match Count",
+              "displayName": "Match Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords Found (Array) ",
+              "displayName": "Keywords Found (Array) ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Black-Art Keywords",
+              "displayName": "Black-Art Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Detected On",
+              "displayName": "Detected On",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dedupe Key (Clean)",
+              "displayName": "Dedupe Key (Clean)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dedupe Key (SHA1)",
+              "displayName": "Dedupe Key (SHA1)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Author(s)",
+              "displayName": "Author(s)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Primary Author",
+              "displayName": "Primary Author",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Author Count",
+              "displayName": "Author Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Artist Candidates",
+              "displayName": "Artist Candidates",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Needs Artist Review",
+              "displayName": "Needs Artist Review",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Artist Matches",
+              "displayName": "Artist Matches",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Artist Slugs",
+              "displayName": "Artist Slugs",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Names",
+              "displayName": "Artist Names",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Strapi Document",
+              "displayName": "Artist Strapi Document",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Matches Count",
+              "displayName": "Artist Matches Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Slugs (CSV)",
+              "displayName": "Artist Slugs (CSV)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "BAAD Title",
+              "displayName": "BAAD Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Dek",
+              "displayName": "BAAD Dek",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Editor Summary",
+              "displayName": "BAAD Editor Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Meta Description",
+              "displayName": "BAAD Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD SEO Title",
+              "displayName": "BAAD SEO Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Tags",
+              "displayName": "BAAD Tags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Review Status",
+              "displayName": "Review Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Queued for Draft",
+                  "value": "Queued for Draft"
+                },
+                {
+                  "name": "Draft Generated",
+                  "value": "Draft Generated"
+                },
+                {
+                  "name": "In Review",
+                  "value": "In Review"
+                },
+                {
+                  "name": "Approved for Strapi",
+                  "value": "Approved for Strapi"
+                },
+                {
+                  "name": "Published",
+                  "value": "Published"
+                },
+                {
+                  "name": "Needs Category",
+                  "value": "Needs Category"
+                },
+                {
+                  "name": "Ready for Source Analysis",
+                  "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generate Draft?",
+              "displayName": "Generate Draft?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Strapi Article ID",
+              "displayName": "Strapi Article ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "News Topic",
+              "displayName": "News Topic",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Obituary / In Memoriam",
+                  "value": "Obituary / In Memoriam"
+                },
+                {
+                  "name": "Restitution / Repatriation",
+                  "value": "Restitution / Repatriation"
+                },
+                {
+                  "name": "Auction Result",
+                  "value": "Auction Result"
+                },
+                {
+                  "name": "Auction Announcement",
+                  "value": "Auction Announcement"
+                },
+                {
+                  "name": "Exhibition Announcement",
+                  "value": "Exhibition Announcement"
+                },
+                {
+                  "name": "New Representation",
+                  "value": "New Representation"
+                },
+                {
+                  "name": "Legal / Lawsuit",
+                  "value": "Legal / Lawsuit"
+                },
+                {
+                  "name": "Gallery Closure",
+                  "value": "Gallery Closure"
+                },
+                {
+                  "name": "Gallery Opening / Expansion",
+                  "value": "Gallery Opening / Expansion"
+                },
+                {
+                  "name": "Appointment / Role Change",
+                  "value": "Appointment / Role Change"
+                },
+                {
+                  "name": "Archaeology / Discovery",
+                  "value": "Archaeology / Discovery"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                },
+                {
+                  "name": " Award / Prize",
+                  "value": " Award / Prize"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "News Topic Code",
+              "displayName": "News Topic Code",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "obituary",
+                  "value": "obituary"
+                },
+                {
+                  "name": "restitution",
+                  "value": "restitution"
+                },
+                {
+                  "name": "auction_result",
+                  "value": "auction_result"
+                },
+                {
+                  "name": "auction_announcement",
+                  "value": "auction_announcement"
+                },
+                {
+                  "name": "exhibition_announcement",
+                  "value": "exhibition_announcement"
+                },
+                {
+                  "name": "representation",
+                  "value": "representation"
+                },
+                {
+                  "name": "legal",
+                  "value": "legal"
+                },
+                {
+                  "name": "gallery_closure",
+                  "value": "gallery_closure"
+                },
+                {
+                  "name": "gallery_opening",
+                  "value": "gallery_opening"
+                },
+                {
+                  "name": "appointment",
+                  "value": "appointment"
+                },
+                {
+                  "name": "archaeology",
+                  "value": "archaeology"
+                },
+                {
+                  "name": "other",
+                  "value": "other"
+                },
+                {
+                  "name": "award",
+                  "value": "award"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Publish to Strapi",
+              "displayName": "Publish to Strapi",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Strapi Document ID",
+              "displayName": "Strapi Document ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Strapi Slug",
+              "displayName": "Strapi Slug",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Strapi Sync Status",
+              "displayName": "Strapi Sync Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Needs Sync",
+                  "value": "Needs Sync"
+                },
+                {
+                  "name": "Synced",
+                  "value": "Synced"
+                },
+                {
+                  "name": "Sync Failed",
+                  "value": "Sync Failed"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Strapi Sync At",
+              "displayName": "Last Strapi Sync At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Error",
+              "displayName": "Last Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Last Error Step",
+              "displayName": "Last Error Step",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Word Count",
+              "displayName": "Source Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Sources Combined Word Count",
+              "displayName": "Sources Combined Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Best Source Word Count",
+              "displayName": "Best Source Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Quality Status",
+              "displayName": "Source Quality Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pass",
+                  "value": "Pass"
+                },
+                {
+                  "name": "Fail",
+                  "value": "Fail"
+                },
+                {
+                  "name": "Unchecked",
+                  "value": "Unchecked"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Quality Note",
+              "displayName": "Source Quality Note",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Article Analysis",
+              "displayName": "Source Article Analysis",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Publish Categories",
+              "displayName": "BAAD Publish Categories",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Art",
+                  "value": "Art"
+                },
+                {
+                  "name": "Design",
+                  "value": "Design"
+                },
+                {
+                  "name": "Film",
+                  "value": "Film"
+                },
+                {
+                  "name": "Books",
+                  "value": "Books"
+                },
+                {
+                  "name": "Architecture",
+                  "value": "Architecture"
+                },
+                {
+                  "name": "Fashion",
+                  "value": "Fashion"
+                },
+                {
+                  "name": "Performance",
+                  "value": "Performance"
+                },
+                {
+                  "name": "Photography",
+                  "value": "Photography"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Closing Paragraph Info",
+              "displayName": "BAAD Closing Paragraph Info",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Source Packets",
+              "displayName": "BAAD Source Packets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        -16
+      ],
+      "id": "b1523959-ba4e-47fb-93b5-53bd4d83e0a5",
+      "name": "Update Airtable After Strapi Update",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblF0ghefGC2Bzh9K",
+          "mode": "list",
+          "cachedResultName": "Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblF0ghefGC2Bzh9K"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('IF Strapi Article Exists?').item.json.airtableId }}",
+            "Review Status": "Pushed to Strapi",
+            "Strapi Article ID": "={{ String($json.data.id) }}",
+            "Strapi Document ID": "={{ $json.data.documentId }}",
+            "Strapi Sync Status": "Synced",
+            "Strapi Slug": "={{ $json.data.slug }}",
+            "Last Strapi Sync At": "={{ new Date().toISOString() }}",
+            "Published in Strapi (CHK)": "={{ false }}",
+            "Publish to Strapi": "={{ false }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dek",
+              "displayName": "Dek",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Body / Summary",
+              "displayName": "Source Body / Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Outlet",
+              "displayName": "Source Outlet",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source URL",
+              "displayName": "Source URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Article Sources",
+              "displayName": "Article Sources",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LLM Block (from Article Sources)",
+              "displayName": "LLM Block (from Article Sources)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Sources Combined (for LLM)",
+              "displayName": "Sources Combined (for LLM)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Design",
+                  "value": "Design"
+                },
+                {
+                  "name": "Art",
+                  "value": "Art"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Subcategory",
+              "displayName": "Subcategory",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Medium",
+              "displayName": "Medium",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Stage",
+              "displayName": "Stage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Marked for Regeneration",
+              "displayName": "Marked for Regeneration",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Editor Summary",
+              "displayName": "Editor Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "SEO Title",
+              "displayName": "SEO Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Meta Description",
+              "displayName": "Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tags",
+              "displayName": "Tags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "fashion",
+                  "value": "fashion"
+                },
+                {
+                  "name": "luxury",
+                  "value": "luxury"
+                },
+                {
+                  "name": "Exhibition",
+                  "value": "Exhibition"
+                },
+                {
+                  "name": "Museum",
+                  "value": "Museum"
+                },
+                {
+                  "name": "Gallery",
+                  "value": "Gallery"
+                },
+                {
+                  "name": "Auction",
+                  "value": "Auction"
+                },
+                {
+                  "name": "Acquisition",
+                  "value": "Acquisition"
+                },
+                {
+                  "name": "Deaccession",
+                  "value": "Deaccession"
+                },
+                {
+                  "name": "Appointment",
+                  "value": "Appointment"
+                },
+                {
+                  "name": "Award",
+                  "value": "Award"
+                },
+                {
+                  "name": "Lawsuit / Legal",
+                  "value": "Lawsuit / Legal"
+                },
+                {
+                  "name": "Commission",
+                  "value": "Commission"
+                },
+                {
+                  "name": "Residency",
+                  "value": "Residency"
+                },
+                {
+                  "name": "Grant / Funding",
+                  "value": "Grant / Funding"
+                },
+                {
+                  "name": "Biennial / Triennial",
+                  "value": "Biennial / Triennial"
+                },
+                {
+                  "name": "Art Fair",
+                  "value": "Art Fair"
+                },
+                {
+                  "name": "Art Festival",
+                  "value": "Art Festival"
+                },
+                {
+                  "name": "Preservation / Conservation",
+                  "value": "Preservation / Conservation"
+                },
+                {
+                  "name": "Controversy",
+                  "value": "Controversy"
+                },
+                {
+                  "name": "Obituary",
+                  "value": "Obituary"
+                },
+                {
+                  "name": "Announced",
+                  "value": "Announced"
+                },
+                {
+                  "name": "Opens",
+                  "value": "Opens"
+                },
+                {
+                  "name": "Closes",
+                  "value": "Closes"
+                },
+                {
+                  "name": "Extended",
+                  "value": "Extended"
+                },
+                {
+                  "name": "Touring",
+                  "value": "Touring"
+                },
+                {
+                  "name": "Call for Entries",
+                  "value": "Call for Entries"
+                },
+                {
+                  "name": "London",
+                  "value": "London"
+                },
+                {
+                  "name": "New York",
+                  "value": "New York"
+                },
+                {
+                  "name": "Los Angeles",
+                  "value": "Los Angeles"
+                },
+                {
+                  "name": "Paris",
+                  "value": "Paris"
+                },
+                {
+                  "name": "Lagos",
+                  "value": "Lagos"
+                },
+                {
+                  "name": "Accra",
+                  "value": "Accra"
+                },
+                {
+                  "name": "Amsterdam",
+                  "value": "Amsterdam"
+                },
+                {
+                  "name": "Rotterdam",
+                  "value": "Rotterdam"
+                },
+                {
+                  "name": "Chicago",
+                  "value": "Chicago"
+                },
+                {
+                  "name": "Atlanta",
+                  "value": "Atlanta"
+                },
+                {
+                  "name": "High Priority",
+                  "value": "High Priority"
+                },
+                {
+                  "name": "Needs Image",
+                  "value": "Needs Image"
+                },
+                {
+                  "name": "Follow Up Needed",
+                  "value": "Follow Up Needed"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Updated At",
+              "displayName": "Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dedupe Key",
+              "displayName": "Dedupe Key",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Article Type",
+              "displayName": "Article Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Announcement Date",
+              "displayName": "Announcement Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Thumbnail URL",
+              "displayName": "Thumbnail URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Body (BAAD Draft)",
+              "displayName": "Body (BAAD Draft)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Slug (FORMULA)",
+              "displayName": "Slug (FORMULA)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Read Link (FORMULA)",
+              "displayName": "Read Link (FORMULA)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Published in Strapi (CHK)",
+              "displayName": "Published in Strapi (CHK)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Artist / Entity Name(s)",
+              "displayName": "Artist / Entity Name(s)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image URL (Main)",
+              "displayName": "Image URL (Main)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords Found",
+              "displayName": "Keywords Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Matched Fields",
+              "displayName": "Matched Fields",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Match Count",
+              "displayName": "Match Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords Found (Array) ",
+              "displayName": "Keywords Found (Array) ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Black-Art Keywords",
+              "displayName": "Black-Art Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Detected On",
+              "displayName": "Detected On",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dedupe Key (Clean)",
+              "displayName": "Dedupe Key (Clean)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Dedupe Key (SHA1)",
+              "displayName": "Dedupe Key (SHA1)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Author(s)",
+              "displayName": "Author(s)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Primary Author",
+              "displayName": "Primary Author",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Author Count",
+              "displayName": "Author Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Artist Candidates",
+              "displayName": "Artist Candidates",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Needs Artist Review",
+              "displayName": "Needs Artist Review",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Artist Matches",
+              "displayName": "Artist Matches",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Artist Slugs",
+              "displayName": "Artist Slugs",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Names",
+              "displayName": "Artist Names",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Strapi Document",
+              "displayName": "Artist Strapi Document",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Matches Count",
+              "displayName": "Artist Matches Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Artist Slugs (CSV)",
+              "displayName": "Artist Slugs (CSV)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "BAAD Title",
+              "displayName": "BAAD Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Dek",
+              "displayName": "BAAD Dek",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Editor Summary",
+              "displayName": "BAAD Editor Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Meta Description",
+              "displayName": "BAAD Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD SEO Title",
+              "displayName": "BAAD SEO Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Tags",
+              "displayName": "BAAD Tags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Review Status",
+              "displayName": "Review Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Queued for Draft",
+                  "value": "Queued for Draft"
+                },
+                {
+                  "name": "Draft Generated",
+                  "value": "Draft Generated"
+                },
+                {
+                  "name": "In Review",
+                  "value": "In Review"
+                },
+                {
+                  "name": "Approved for Strapi",
+                  "value": "Approved for Strapi"
+                },
+                {
+                  "name": "Published",
+                  "value": "Published"
+                },
+                {
+                  "name": "Needs Category",
+                  "value": "Needs Category"
+                },
+                {
+                  "name": "Ready for Source Analysis",
+                  "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generate Draft?",
+              "displayName": "Generate Draft?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Strapi Article ID",
+              "displayName": "Strapi Article ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "News Topic",
+              "displayName": "News Topic",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Obituary / In Memoriam",
+                  "value": "Obituary / In Memoriam"
+                },
+                {
+                  "name": "Restitution / Repatriation",
+                  "value": "Restitution / Repatriation"
+                },
+                {
+                  "name": "Auction Result",
+                  "value": "Auction Result"
+                },
+                {
+                  "name": "Auction Announcement",
+                  "value": "Auction Announcement"
+                },
+                {
+                  "name": "Exhibition Announcement",
+                  "value": "Exhibition Announcement"
+                },
+                {
+                  "name": "New Representation",
+                  "value": "New Representation"
+                },
+                {
+                  "name": "Legal / Lawsuit",
+                  "value": "Legal / Lawsuit"
+                },
+                {
+                  "name": "Gallery Closure",
+                  "value": "Gallery Closure"
+                },
+                {
+                  "name": "Gallery Opening / Expansion",
+                  "value": "Gallery Opening / Expansion"
+                },
+                {
+                  "name": "Appointment / Role Change",
+                  "value": "Appointment / Role Change"
+                },
+                {
+                  "name": "Archaeology / Discovery",
+                  "value": "Archaeology / Discovery"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                },
+                {
+                  "name": " Award / Prize",
+                  "value": " Award / Prize"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "News Topic Code",
+              "displayName": "News Topic Code",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "obituary",
+                  "value": "obituary"
+                },
+                {
+                  "name": "restitution",
+                  "value": "restitution"
+                },
+                {
+                  "name": "auction_result",
+                  "value": "auction_result"
+                },
+                {
+                  "name": "auction_announcement",
+                  "value": "auction_announcement"
+                },
+                {
+                  "name": "exhibition_announcement",
+                  "value": "exhibition_announcement"
+                },
+                {
+                  "name": "representation",
+                  "value": "representation"
+                },
+                {
+                  "name": "legal",
+                  "value": "legal"
+                },
+                {
+                  "name": "gallery_closure",
+                  "value": "gallery_closure"
+                },
+                {
+                  "name": "gallery_opening",
+                  "value": "gallery_opening"
+                },
+                {
+                  "name": "appointment",
+                  "value": "appointment"
+                },
+                {
+                  "name": "archaeology",
+                  "value": "archaeology"
+                },
+                {
+                  "name": "other",
+                  "value": "other"
+                },
+                {
+                  "name": "award",
+                  "value": "award"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Publish to Strapi",
+              "displayName": "Publish to Strapi",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Strapi Document ID",
+              "displayName": "Strapi Document ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Strapi Slug",
+              "displayName": "Strapi Slug",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Strapi Sync Status",
+              "displayName": "Strapi Sync Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Needs Sync",
+                  "value": "Needs Sync"
+                },
+                {
+                  "name": "Synced",
+                  "value": "Synced"
+                },
+                {
+                  "name": "Sync Failed",
+                  "value": "Sync Failed"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Strapi Sync At",
+              "displayName": "Last Strapi Sync At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Error",
+              "displayName": "Last Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Last Error Step",
+              "displayName": "Last Error Step",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Word Count",
+              "displayName": "Source Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Sources Combined Word Count",
+              "displayName": "Sources Combined Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Best Source Word Count",
+              "displayName": "Best Source Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Quality Status",
+              "displayName": "Source Quality Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pass",
+                  "value": "Pass"
+                },
+                {
+                  "name": "Fail",
+                  "value": "Fail"
+                },
+                {
+                  "name": "Unchecked",
+                  "value": "Unchecked"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Quality Note",
+              "displayName": "Source Quality Note",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Article Analysis",
+              "displayName": "Source Article Analysis",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Publish Categories",
+              "displayName": "BAAD Publish Categories",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Art",
+                  "value": "Art"
+                },
+                {
+                  "name": "Design",
+                  "value": "Design"
+                },
+                {
+                  "name": "Film",
+                  "value": "Film"
+                },
+                {
+                  "name": "Books",
+                  "value": "Books"
+                },
+                {
+                  "name": "Architecture",
+                  "value": "Architecture"
+                },
+                {
+                  "name": "Fashion",
+                  "value": "Fashion"
+                },
+                {
+                  "name": "Performance",
+                  "value": "Performance"
+                },
+                {
+                  "name": "Photography",
+                  "value": "Photography"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Closing Paragraph Info",
+              "displayName": "BAAD Closing Paragraph Info",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "BAAD Source Packets",
+              "displayName": "BAAD Source Packets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        256
+      ],
+      "id": "9af7b71c-2e94-4234-bba6-7f23c0bc7c39",
+      "name": "Update Airtable After Strapi Create",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Ready for Strapi Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Ready for Strapi Articles": {
+      "main": [
+        [
+          {
+            "node": "Prepare Article for Strapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Article for Strapi": {
+      "main": [
+        [
+          {
+            "node": "Build Strapi Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Strapi Payload": {
+      "main": [
+        [
+          {
+            "node": "Search Existing Strapi Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Existing Strapi Article": {
+      "main": [
+        [
+          {
+            "node": "Prepare Create or Update Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Create or Update Decision": {
+      "main": [
+        [
+          {
+            "node": "IF Strapi Article Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Strapi Article Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Strapi News Article",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Strapi News Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Strapi News Article": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable After Strapi Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Strapi News Article": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable After Strapi Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fec768c7-4784-4d3d-b45b-99ddf36eae3c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea8024dc22668e502814432e3d34bbaa598b9ebab50b7f5fcbebdfc6c7a2344e"
+  },
+  "nodeGroups": [],
+  "id": "LBbz89N1zA2mGGD8",
+  "tags": []
+}
