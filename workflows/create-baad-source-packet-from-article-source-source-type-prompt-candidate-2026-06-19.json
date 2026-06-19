@@ -1,0 +1,860 @@
+{
+  "name": "Create BAAD Source Packet from Article Source",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e005b73f-62a7-428a-92a8-1d6650719294",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblDnpg82CcOvwXue",
+          "mode": "list",
+          "cachedResultName": "Article Sources",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblDnpg82CcOvwXue"
+        },
+        "filterByFormula": "=AND(\n  LEN({Source Body} & \"\") > 0,\n  LEN({Articles} & \"\") > 0,\n  LEN({BAAD Source Packets} & \"\") = 0\n)",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "83a2441d-28b2-47eb-8ba3-8537a8b883ec",
+      "name": "Get Article Sources Needing Packet",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const source = $json.fields || {};\n\nconst sourceRecordId = $json.id;\nconst articleIds = source['Articles'] || [];\n\nconst sourceBody = String(source['Source Body'] || '').trim();\nconst sourceOutlet = String(source['Source Outlet'] || '').trim();\nconst sourceTitle = String(source['Source Title'] || '').trim();\nconst sourceUrl = String(source['Source URL'] || '').trim();\n\nconst words = sourceBody\n  .replace(/\\s+/g, ' ')\n  .trim()\n  .split(' ')\n  .filter(Boolean);\n\nconst wordCount = sourceBody ? words.length : 0;\n\nconst lower = sourceBody.toLowerCase();\n\nfunction hasAny(terms) {\n  return terms.some((term) => lower.includes(term));\n}\n\nconst hasExhibitionSignal = hasAny([\n  'exhibition',\n  'solo exhibition',\n  'group exhibition',\n  'gallery',\n  'museum',\n  'on view',\n  'presented by',\n  'venue',\n]);\n\nconst hasFilmSignal = hasAny([\n  'film',\n  'documentary',\n  'video',\n  'screening',\n  'art21',\n  'cinema',\n  'episode',\n  'platform',\n]);\n\nconst hasMaterialSignal = hasAny([\n  'material',\n  'process',\n  'rubber',\n  'metal',\n  'textile',\n  'ceramic',\n  'paint',\n  'bronze',\n  'wood',\n  'sculpture',\n]);\n\nconst hasQuoteSignal = /“[^”]+”|\"[^\"]+\"/.test(sourceBody);\n\nlet likelyArticleType = 'Other / Needs Classification';\nlet draftUsePriority = 'Primary';\nlet sourceType = 'Additional Article';\n\nif (hasExhibitionSignal) {\n  likelyArticleType = 'Exhibition / Project Spotlight';\n  sourceType = sourceOutlet.toLowerCase().includes('gallery')\n    ? 'Gallery Exhibition Page'\n    : 'Gallery Press Release';\n}\n\nif (hasFilmSignal) {\n  likelyArticleType = 'Film / Media Story';\n  sourceType = 'Additional Article';\n}\n\nif (hasMaterialSignal && !hasFilmSignal) {\n  likelyArticleType = hasExhibitionSignal\n    ? 'Exhibition / Project Spotlight'\n    : 'Material / Process Story';\n}\n\nlet sourceReliability = 'Unknown';\nif (\n  sourceOutlet &&\n  hasAny(['gallery', 'museum', 'institution', 'foundation']) ||\n  sourceOutlet.toLowerCase().includes('moffett')\n) {\n  sourceReliability = 'High';\n}\n\nlet rightsRisk = 'Medium';\nif (\n  sourceType === 'Gallery Press Release' ||\n  sourceType === 'Gallery Exhibition Page' ||\n  sourceType === 'Museum Page' ||\n  sourceType === 'Institution Page'\n) {\n  rightsRisk = 'Medium';\n}\n\nlet sourceQualityStatus = 'Needs Review';\nlet sourceStrengthScore = 0;\nconst sourceStrengthNotes = [];\n\nif (wordCount >= 500) {\n  sourceStrengthScore += 3;\n  sourceStrengthNotes.push('Strong source length.');\n} else if (wordCount >= 200) {\n  sourceStrengthScore += 2;\n  sourceStrengthNotes.push('Usable source length.');\n} else if (wordCount >= 80) {\n  sourceStrengthScore += 1;\n  sourceStrengthNotes.push('Short but usable for packet creation.');\n} else {\n  sourceStrengthNotes.push('Source is very short.');\n}\n\nif (hasExhibitionSignal) {\n  sourceStrengthScore += 1;\n  sourceStrengthNotes.push('Exhibition/project signals detected.');\n}\n\nif (hasFilmSignal) {\n  sourceStrengthScore += 1;\n  sourceStrengthNotes.push('Film/media signals detected.');\n}\n\nif (hasMaterialSignal) {\n  sourceStrengthScore += 1;\n  sourceStrengthNotes.push('Material/process signals detected.');\n}\n\nif (hasQuoteSignal) {\n  sourceStrengthScore += 1;\n  sourceStrengthNotes.push('Potential quote language detected.');\n}\n\nif (sourceStrengthScore >= 5) {\n  sourceQualityStatus = 'Strong';\n} else if (sourceStrengthScore >= 3) {\n  sourceQualityStatus = 'Usable';\n} else {\n  sourceQualityStatus = 'Needs More Source';\n}\n\nconst packetJson = {\n  sourceRecordId,\n  articleIds,\n  sourceOutlet,\n  sourceTitle,\n  sourceUrl,\n  wordCount,\n  likelyArticleType,\n  sourceType,\n  sourceReliability,\n  rightsRisk,\n  sourceQualityStatus,\n  sourceStrengthScore,\n  sourceStrengthNotes,\n  automationNote:\n    'Created from Article Sources manual pasted text. Draft generation remains blocked until human approval.',\n};\n\nconst packetNameParts = [\n  sourceOutlet || 'Unknown Source',\n  sourceTitle || 'Untitled Source',\n];\n\nconst packetName = packetNameParts.join(' — ');\n\nconst promptReadyExtract = [\n  `SOURCE OUTLET: ${sourceOutlet || 'Unknown'}`,\n  `SOURCE TITLE: ${sourceTitle || 'Untitled'}`,\n  `SOURCE URL: ${sourceUrl || 'Not provided'}`,\n  `LIKELY ARTICLE TYPE: ${likelyArticleType}`,\n  `SOURCE QUALITY: ${sourceQualityStatus}`,\n  '',\n  'SOURCE TEXT:',\n  sourceBody,\n].join('\\n');\n\nreturn {\n  sourceRecordId,\n  articleIds,\n  sourceOutlet,\n  sourceTitle,\n  sourceUrl,\n  sourceBody,\n  wordCount,\n  packetName,\n  sourceType,\n  likelyArticleType,\n  draftUsePriority,\n  sourceReliability,\n  rightsRisk,\n  sourceQualityStatus,\n  sourceStrengthScore,\n  sourceStrengthNotes: sourceStrengthNotes.join(' '),\n  promptReadyExtract,\n  packetJson: JSON.stringify(packetJson, null, 2),\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "aa12fbfc-bd55-43a9-b5fc-46a12a97420c",
+      "name": "Prepare Source Packet Payload"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSqHcS5tsj6oBha",
+          "mode": "list",
+          "cachedResultName": "BAAD Source Packets",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblSqHcS5tsj6oBha"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Use in Draft?": false,
+            "Use for Quotes?": false,
+            "Use for Closing?": false,
+            "Avoid Copying?": true,
+            "Human Review Needed?": true,
+            "Ready to Generate Draft?": false,
+            "Source Packet Name": "={{ $json.packetName }}",
+            "Article": "={{ $json.articleIds }}",
+            "Source Record": "={{ [ $json.sourceRecordId ] }}",
+            "Source Type": "={{ $json.aiSourceType || $json.sourceType }}",
+            "Source Publisher": "={{ $json.sourceOutlet }}",
+            "Source Title": "={{ $json.sourceTitle }}",
+            "Source URL": "={{ $json.sourceUrl }}",
+            "Full Text / Extract": "={{ $json.sourceBody }}",
+            "Short Source Summary": "={{ $json.aiShortSourceSummary }}",
+            "Editorial Use Notes": "={{ [\n  $json.aiEditorialUseNotes,\n  $json.aiMaterialProcessDetails ? \"Material / process details:\\n\" + $json.aiMaterialProcessDetails : \"\",\n  $json.aiRecommendedDraftUse ? \"Recommended draft use:\\n\" + $json.aiRecommendedDraftUse : \"\"\n].filter(Boolean).join(\"\\n\\n\") }}",
+            "Prompt-Ready Extract": "={{ $json.aiPromptReadyExtract }}",
+            "Packet JSON": "={{ $json.packetJson }}",
+            "Draft Use Priority": "={{ $json.draftUsePriority }}",
+            "Human Review Notes": "={{ $json.aiHumanReviewNotes + \"\\n\\nSuggested additional sources:\\n\" + $json.aiSuggestedAdditionalSources + \"\\n\\nUnsupported claim warnings:\\n\" + $json.aiUnsupportedClaimWarnings }}",
+            "Source Reliability": "={{ $json.aiSourceReliability || $json.sourceReliability }}",
+            "Rights / Copying Risk": "={{ $json.aiRightsCopyingRisk || $json.rightsRisk }}",
+            "Processing Status": "Needs Review",
+            "Extraction Method": "Manual Paste",
+            "Source Word Count": "={{ $json.wordCount }}",
+            "Packet Version": 2,
+            "Source Record ID": "={{ $json.sourceRecordId }}",
+            "Article Record ID": "={{ $json.articleIds[0] }}",
+            "Avoid Copying Notes": "={{ $json.aiAvoidCopyingNotes }}",
+            "Last Processed At": "={{ new Date().toISOString() }}",
+            "Verified Facts": "={{ $json.aiVerifiedFacts }}",
+            "Quote Candidates": "={{ $json.aiQuoteCandidates }}",
+            "Quote Use Notes": "={{ $json.aiQuoteUseNotes }}",
+            "Source Meaning to Recast": "={{ $json.aiSourceMeaningToRecast }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Source Packet Name",
+              "displayName": "Source Packet Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Article",
+              "displayName": "Article",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Record",
+              "displayName": "Source Record",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Type",
+              "displayName": "Source Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Gallery Press Release",
+                  "value": "Gallery Press Release"
+                },
+                {
+                  "name": "Gallery Exhibition Page",
+                  "value": "Gallery Exhibition Page"
+                },
+                {
+                  "name": "Artist Bio",
+                  "value": "Artist Bio"
+                },
+                {
+                  "name": "Artist Statement",
+                  "value": "Artist Statement"
+                },
+                {
+                  "name": "Artist Interview",
+                  "value": "Artist Interview"
+                },
+                {
+                  "name": "Museum Page",
+                  "value": "Museum Page"
+                },
+                {
+                  "name": "Institution Page",
+                  "value": "Institution Page"
+                },
+                {
+                  "name": "Artwork Page",
+                  "value": "Artwork Page"
+                },
+                {
+                  "name": "Additional Article",
+                  "value": "Additional Article"
+                },
+                {
+                  "name": "Review",
+                  "value": "Review"
+                },
+                {
+                  "name": "Catalogue Text",
+                  "value": "Catalogue Text"
+                },
+                {
+                  "name": "BAAD Internal Reference",
+                  "value": "BAAD Internal Reference"
+                },
+                {
+                  "name": "Manual Research Note",
+                  "value": "Manual Research Note"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Publisher",
+              "displayName": "Source Publisher",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Title",
+              "displayName": "Source Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source URL",
+              "displayName": "Source URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Date",
+              "displayName": "Source Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Full Text / Extract",
+              "displayName": "Full Text / Extract",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Short Source Summary",
+              "displayName": "Short Source Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Verified Facts",
+              "displayName": "Verified Facts",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quote Candidates",
+              "displayName": "Quote Candidates",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quote Use Notes",
+              "displayName": "Quote Use Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Meaning to Recast",
+              "displayName": "Source Meaning to Recast",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Avoid Copying Notes",
+              "displayName": "Avoid Copying Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Editorial Use Notes",
+              "displayName": "Editorial Use Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Prompt-Ready Extract",
+              "displayName": "Prompt-Ready Extract",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Packet JSON",
+              "displayName": "Packet JSON",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Draft Use Priority",
+              "displayName": "Draft Use Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Primary",
+                  "value": "Primary"
+                },
+                {
+                  "name": "Supporting",
+                  "value": "Supporting"
+                },
+                {
+                  "name": "Background",
+                  "value": "Background"
+                },
+                {
+                  "name": "Closing Only",
+                  "value": "Closing Only"
+                },
+                {
+                  "name": "Do Not Use",
+                  "value": "Do Not Use"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Use in Draft?",
+              "displayName": "Use in Draft?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Use for Quotes?",
+              "displayName": "Use for Quotes?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Use for Closing?",
+              "displayName": "Use for Closing?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Avoid Copying?",
+              "displayName": "Avoid Copying?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Human Review Needed?",
+              "displayName": "Human Review Needed?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Human Review Notes",
+              "displayName": "Human Review Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Reliability",
+              "displayName": "Source Reliability",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "High",
+                  "value": "High"
+                },
+                {
+                  "name": "Medium",
+                  "value": "Medium"
+                },
+                {
+                  "name": "Low",
+                  "value": "Low"
+                },
+                {
+                  "name": "Unknown",
+                  "value": "Unknown"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Rights / Copying Risk",
+              "displayName": "Rights / Copying Risk",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Low",
+                  "value": "Low"
+                },
+                {
+                  "name": "Medium",
+                  "value": "Medium"
+                },
+                {
+                  "name": "High",
+                  "value": "High"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Processing Status",
+              "displayName": "Processing Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Extracted",
+                  "value": "Extracted"
+                },
+                {
+                  "name": "Analysed",
+                  "value": "Analysed"
+                },
+                {
+                  "name": "Approved",
+                  "value": "Approved"
+                },
+                {
+                  "name": "Needs Review",
+                  "value": "Needs Review"
+                },
+                {
+                  "name": "Do Not Use",
+                  "value": "Do Not Use"
+                },
+                {
+                  "name": "Error",
+                  "value": "Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Extraction Method",
+              "displayName": "Extraction Method",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Manual Paste",
+                  "value": "Manual Paste"
+                },
+                {
+                  "name": "Scraped",
+                  "value": "Scraped"
+                },
+                {
+                  "name": "Uploaded File",
+                  "value": "Uploaded File"
+                },
+                {
+                  "name": "API",
+                  "value": "API"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Processed At",
+              "displayName": "Last Processed At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Processing Error",
+              "displayName": "Processing Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source Word Count",
+              "displayName": "Source Word Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Packet Version",
+              "displayName": "Packet Version",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Dedupe Key",
+              "displayName": "Dedupe Key",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Signature",
+              "displayName": "Signature",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Article Record ID",
+              "displayName": "Article Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source Record ID",
+              "displayName": "Source Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Ready to Generate Draft?",
+              "displayName": "Ready to Generate Draft?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        176
+      ],
+      "id": "a46cc0b4-0e09-4154-aeee-4db086c2289f",
+      "name": "Create BAAD Source Packet",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.5",
+          "mode": "list",
+          "cachedResultName": "GPT-5.5"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are BAAD’s source-packet analyst for Black Art & Design.\n\nYour job is to turn source material into a structured editorial evidence packet for a future BAAD article.\n\nYou must not write the article.\n\nYou must extract only what the source supports. Do not invent facts, do not add reputation claims, and do not make career-duration claims such as \"has long used\", \"is known for\", \"best known for\", \"central to their practice\", or \"primary medium\" unless the source explicitly supports them.\n\nUse BAAD’s Source Packet Source Type Guide logic:\n- Separate verified facts from interpretation.\n- Identify what the source is trusted for.\n- Identify what the source should not be used to claim.\n- Identify quote candidates only when the quote is clearly present.\n- Identify copying-risk language, structure, metaphors, blurbs, promotional claims, and critic/article thesis language.\n- Flag human review when the source is thin, sensitive, ambiguous, opinion-heavy, promotional, high-copying-risk, or not enough to support a full BAAD draft.\n\nUse only Airtable-valid Source Type values:\n\"Gallery Press Release\",\n\"Gallery Exhibition Page\",\n\"Artist Bio\",\n\"Artist Statement\",\n\"Artist Interview\",\n\"Museum Page\",\n\"Institution Page\",\n\"Artwork Page\",\n\"Additional Article\",\n\"Review\",\n\"Catalogue Text\",\n\"BAAD Internal Reference\",\n\"Manual Research Note\",\n\"Other\".\n\nReturn valid JSON only. Do not wrap the JSON in markdown."
+            },
+            {
+              "content": "=Analyse this source material and create a BAAD Source Packet analysis.\n\nSOURCE METADATA:\nSource outlet: {{ $json.sourceOutlet }}\nSource title: {{ $json.sourceTitle }}\nSource URL: {{ $json.sourceUrl }}\nLikely article type from initial rules: {{ $json.likelyArticleType }}\nInitial source type from initial rules: {{ $json.sourceType }}\nInitial source quality: {{ $json.sourceQualityStatus }}\nInitial source strength notes: {{ $json.sourceStrengthNotes }}\n\nSOURCE TEXT:\n{{ $json.sourceBody }}\n\nClassify the source using the best Airtable-valid Source Type value:\n\"Gallery Press Release\",\n\"Gallery Exhibition Page\",\n\"Artist Bio\",\n\"Artist Statement\",\n\"Artist Interview\",\n\"Museum Page\",\n\"Institution Page\",\n\"Artwork Page\",\n\"Additional Article\",\n\"Review\",\n\"Catalogue Text\",\n\"BAAD Internal Reference\",\n\"Manual Research Note\",\n\"Other\".\n\nReturn JSON with exactly these keys:\n\n{\n  \"sourceType\": \"\",\n  \"shortSourceSummary\": \"\",\n  \"verifiedFacts\": [],\n  \"materialProcessDetails\": [],\n  \"quoteCandidates\": [],\n  \"quoteUseNotes\": \"\",\n  \"sourceMeaningToRecast\": [],\n  \"avoidCopyingNotes\": [],\n  \"editorialUseNotes\": \"\",\n  \"promptReadyExtract\": \"\",\n  \"recommendedArticleType\": \"\",\n  \"recommendedBAADAngle\": \"\",\n  \"recommendedDraftUse\": \"\",\n  \"sourceStrength\": \"\",\n  \"sourceQualityStatus\": \"\",\n  \"sourceReliability\": \"\",\n  \"rightsCopyingRisk\": \"\",\n  \"humanReviewNeeded\": true,\n  \"humanReviewNotes\": \"\",\n  \"needsMoreSourceMaterial\": true,\n  \"suggestedAdditionalSources\": [],\n  \"unsupportedClaimWarnings\": []\n}\n\nRules:\n- sourceType must be one of the Airtable-valid Source Type values listed above.\n- verifiedFacts must be short factual bullets directly supported by the source.\n- materialProcessDetails must capture concrete materials, forms, processes, objects, sounds, images, works, or viewer-facing details.\n- quoteCandidates must include only short quotes that are useful and clearly present in the source.\n- quoteCandidates should include speaker and use note when possible.\n- sourceMeaningToRecast should explain what BAAD can transform into original language.\n- avoidCopyingNotes should warn what phrasing, structure, promotional claims, metaphors, blurbs, or article logic should not be copied.\n- editorialUseNotes should tell the later BAAD draft workflow how to use the source.\n- promptReadyExtract should be a compact evidence summary for a later BAAD draft prompt, written in original wording.\n- recommendedDraftUse should be one of: \"factual_skeleton\", \"artist_voice\", \"context\", \"external_interpretation\", \"closing_info\", \"discovery_only\".\n- sourceStrength must be one of: \"Strong\", \"Usable\", \"Thin\", \"Needs More Source\".\n- sourceQualityStatus must be one of: \"Pass\", \"Needs Review\", \"Needs More Source\", \"Fail\".\n- sourceReliability must be one of: \"High\", \"Medium\", \"Low\", \"Unknown\".\n- rightsCopyingRisk must be one of: \"Low\", \"Medium\", \"High\".\n- recommendedArticleType should use one of:\n  \"Exhibition / Project Spotlight\",\n  \"Film / Media Story\",\n  \"Material / Process Story\",\n  \"Artist Practice Spotlight\",\n  \"Artwork-Led Spotlight\",\n  \"Appointment / Role Change\",\n  \"Book / Publication Story\",\n  \"Public Art / Installation Story\",\n  \"Other / Needs Classification\".\n\nSource-type trust rules:\n- Gallery Press Release / Gallery Exhibition Page: trust for exhibition facts, dates, venue, artist, works, materials, official framing, and attributed quotes. Be cautious with promotional claims.\n- Artist Bio: trust for biography, education, awards, exhibitions, collections, locations, and practice background. Do not use alone to interpret a current exhibition.\n- Artist Statement: trust for artist intention, process, material meaning, and personal framing. Do not turn metaphor into literal fact.\n- Artist Interview: trust for direct speaker statements, process, motivation, anecdotes, and explanations. Avoid copying the interview/article structure.\n- Museum Page / Institution Page: trust for institutional facts, curatorial framing, public programme, commission details, and collection context. Use caution with dense curatorial claims.\n- Review / Additional Article: trust for reported facts and attributed observations. Do not treat critic opinion as BAAD opinion unless clearly attributed.\n- Exhibition Listing: trust for basic facts only; usually discovery_only unless paired with stronger sources.\n- Book / Film / Media-style material: classify as Additional Article, Catalogue Text, or Other depending on the source; trust for publication/film/platform facts and clearly stated themes, but do not claim full content unless verified.\n\nNever invent missing context. Flag human review instead of forcing certainty."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        528,
+        176
+      ],
+      "id": "7e451373-d50b-4fcb-8e79-e8e42c889c85",
+      "name": "Analyse Source Packet with OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "a8Ljw4P8mCHowAbj",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const original = $('Prepare Source Packet Payload').item.json;\n\nconst output = $json.output;\nlet text = '';\n\nif (Array.isArray(output)) {\n  const message = output.find(o => o.type === 'message') || output[0];\n  const content = message?.content || [];\n\n  const textPart = Array.isArray(content)\n    ? content.find(c => c.type === 'output_text') || content[0]\n    : null;\n\n  text = textPart?.text || '';\n}\n\nif (!text && typeof $json.text === 'string') {\n  text = $json.text;\n}\n\nif (!text && typeof $json.output === 'string') {\n  text = $json.output;\n}\n\nif (!text) {\n  throw new Error('Could not find OpenAI output text.');\n}\n\ntext = text.trim();\n\ntext = text\n  .replace(/^\\`\\`\\`json\\s*/i, '')\n  .replace(/^\\`\\`\\`\\s*/i, '')\n  .replace(/\\`\\`\\`$/i, '')\n  .trim();\n\nlet analysis;\n\ntry {\n  analysis = JSON.parse(text);\n} catch (err) {\n  throw new Error(`Could not parse OpenAI JSON: ${err.message}\\n\\nRaw text:\\n${text}`);\n}\n\nfunction formatObject(item) {\n  if (!item || typeof item !== 'object') return String(item || '');\n\n  if (item.quote || item.speaker || item.useNote || item.use_note) {\n    return [\n      item.quote ? `Quote: ${item.quote}` : '',\n      item.speaker ? `Speaker: ${item.speaker}` : '',\n      item.useNote ? `Use note: ${item.useNote}` : '',\n      item.use_note ? `Use note: ${item.use_note}` : '',\n    ].filter(Boolean).join('\\n');\n  }\n\n  return Object.entries(item)\n    .map(([key, value]) => {\n      const formattedValue = Array.isArray(value)\n        ? value.join(', ')\n        : value === null || value === undefined\n          ? ''\n          : String(value);\n\n      return `${key}: ${formattedValue}`;\n    })\n    .join('\\n');\n}\n\nfunction asText(value) {\n  if (Array.isArray(value)) {\n    return value\n      .map((item) => {\n        if (item && typeof item === 'object') return formatObject(item);\n        if (item === null || item === undefined) return '';\n        return String(item);\n      })\n      .filter(Boolean)\n      .join('\\n\\n');\n  }\n\n  if (value && typeof value === 'object') return formatObject(value);\n  if (value === null || value === undefined) return '';\n  return String(value);\n}\n\nfunction bool(value) {\n  return value === true || value === 'true';\n}\n\nconst airtableSourceTypes = new Set([\n  'Gallery Press Release',\n  'Gallery Exhibition Page',\n  'Artist Bio',\n  'Artist Statement',\n  'Artist Interview',\n  'Museum Page',\n  'Institution Page',\n  'Artwork Page',\n  'Additional Article',\n  'Review',\n  'Catalogue Text',\n  'BAAD Internal Reference',\n  'Manual Research Note',\n  'Other',\n]);\n\nfunction cleanSourceType(value, fallback) {\n  const text = asText(value).trim();\n  if (airtableSourceTypes.has(text)) return text;\n\n  if (/interview/i.test(text)) return 'Artist Interview';\n  if (/museum/i.test(text)) return 'Museum Page';\n  if (/institution/i.test(text)) return 'Institution Page';\n  if (/review/i.test(text)) return 'Review';\n  if (/bio/i.test(text)) return 'Artist Bio';\n  if (/statement/i.test(text)) return 'Artist Statement';\n  if (/press release/i.test(text)) return 'Gallery Press Release';\n  if (/gallery/i.test(text) && /exhibition|page/i.test(text)) return 'Gallery Exhibition Page';\n\n  if (airtableSourceTypes.has(fallback)) return fallback;\n  return 'Other';\n}\n\nconst aiSourceType = cleanSourceType(analysis.sourceType, original.sourceType);\n\nconst mergedPacketJson = {\n  ...(original.packetJson ? JSON.parse(original.packetJson) : {}),\n  openAiAnalysis: analysis,\n  aiSourceType,\n};\n\nreturn {\n  ...original,\n\n  aiSourceType,\n  aiShortSourceSummary: asText(analysis.shortSourceSummary),\n  aiVerifiedFacts: asText(analysis.verifiedFacts),\n  aiMaterialProcessDetails: asText(analysis.materialProcessDetails),\n  aiQuoteCandidates: asText(analysis.quoteCandidates),\n  aiQuoteUseNotes: asText(analysis.quoteUseNotes),\n  aiSourceMeaningToRecast: asText(analysis.sourceMeaningToRecast),\n  aiAvoidCopyingNotes: asText(analysis.avoidCopyingNotes),\n  aiEditorialUseNotes: asText(analysis.editorialUseNotes),\n  aiPromptReadyExtract: asText(analysis.promptReadyExtract),\n\n  aiRecommendedArticleType: asText(analysis.recommendedArticleType),\n  aiRecommendedBAADAngle: asText(analysis.recommendedBAADAngle),\n  aiRecommendedDraftUse: asText(analysis.recommendedDraftUse),\n  aiSourceStrength: asText(analysis.sourceStrength),\n  aiSourceQualityStatus: asText(analysis.sourceQualityStatus),\n  aiSourceReliability: asText(analysis.sourceReliability),\n  aiRightsCopyingRisk: asText(analysis.rightsCopyingRisk),\n\n  aiHumanReviewNeeded: bool(analysis.humanReviewNeeded),\n  aiHumanReviewNotes: asText(analysis.humanReviewNotes),\n  aiNeedsMoreSourceMaterial: bool(analysis.needsMoreSourceMaterial),\n  aiSuggestedAdditionalSources: asText(analysis.suggestedAdditionalSources),\n  aiUnsupportedClaimWarnings: asText(analysis.unsupportedClaimWarnings),\n\n  packetJson: JSON.stringify(mergedPacketJson, null, 2),\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        176
+      ],
+      "id": "8f3ffe2a-c751-47ac-b587-e5b2be3778a4",
+      "name": "Parse Source Packet Analysis"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Article Sources Needing Packet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Article Sources Needing Packet": {
+      "main": [
+        [
+          {
+            "node": "Prepare Source Packet Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Source Packet Payload": {
+      "main": [
+        [
+          {
+            "node": "Analyse Source Packet with OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse Source Packet with OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Parse Source Packet Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Source Packet Analysis": {
+      "main": [
+        [
+          {
+            "node": "Create BAAD Source Packet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "feea2a09-adc4-492d-b416-910cf27dd314",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea8024dc22668e502814432e3d34bbaa598b9ebab50b7f5fcbebdfc6c7a2344e"
+  },
+  "nodeGroups": [],
+  "id": "0M3KMP726nrexixl",
+  "tags": []
+}
