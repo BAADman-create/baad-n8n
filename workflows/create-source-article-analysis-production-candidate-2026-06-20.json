@@ -1,0 +1,357 @@
+{
+  "name": "Create Source Article Analysis – Production Candidate",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "bfa0d63f-115e-4475-ab8a-ff89333e7f94",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblF0ghefGC2Bzh9K",
+          "mode": "list",
+          "cachedResultName": "Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblF0ghefGC2Bzh9K"
+        },
+        "filterByFormula": "=AND(\n  LEN({Article Sources} & \"\") > 0,\n  LEN({Source Article Analysis} & \"\") = 0,\n  {Generate Draft?} = 1\n)",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        260,
+        0
+      ],
+      "id": "c2a66dd2-e5c9-4e89-926a-b9f56ed3bcf0",
+      "name": "Get Articles Ready for Source Analysis",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fields = $json.fields || {};\n\nfunction text(value) {\n  if (Array.isArray(value)) return value.join('\\n');\n  if (value === null || value === undefined) return '';\n  return String(value).trim();\n}\n\nfunction arr(value) {\n  if (Array.isArray(value)) return value;\n  if (!value) return [];\n  return [value];\n}\n\nconst articleRecordId = $json.id;\n\nconst category = text(fields['Category']);\nconst baadPublishCategories = arr(fields['BAAD Publish Categories']).filter(Boolean);\nconst fallbackCategories = baadPublishCategories.length\n  ? baadPublishCategories\n  : category\n    ? [category]\n    : [];\n\nreturn {\n  articleRecordId,\n  title: text(fields['Title']),\n  dek: text(fields['Dek']),\n  sourceBodySummary: text(fields['Source Body / Summary']),\n  sourceOutlet: text(fields['Source Outlet']),\n  sourceUrl: text(fields['Source URL']),\n  sourcesCombined: text(fields['Sources Combined (for LLM)']),\n  llmBlockFromSources: text(fields['LLM Block (from Article Sources)']),\n  category,\n  baadPublishCategories: fallbackCategories,\n  newsTopic: text(fields['News Topic']),\n  artistEntityNames: text(fields['Artist / Entity Name(s)']),\n  artistCandidates: text(fields['Artist Candidates']),\n  articleSourceIds: arr(fields['Article Sources']),\n};"
+      },
+      "id": "73c670af-4395-405b-bc14-3da99e4cf117",
+      "name": "Prepare Article Analysis Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSqHcS5tsj6oBha",
+          "mode": "list",
+          "cachedResultName": "BAAD Source Packets",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblSqHcS5tsj6oBha"
+        },
+        "filterByFormula": "=AND(\n  {Article Record ID} = '{{ $json.articleRecordId }}',\n  {Use in Draft?} = 1,\n  {Ready to Generate Draft?} = 1,\n  {Processing Status} = 'Approved'\n)",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        780,
+        0
+      ],
+      "id": "06861001-18b8-484b-9d6c-5b658c887f92",
+      "name": "Get Approved Source Packets",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const article = $('Prepare Article Analysis Context').first().json;\nconst packetItems = $input.all().filter(item => item.json && item.json.id && item.json.fields);\n\nfunction text(value) {\n  if (Array.isArray(value)) return value.join('\\n');\n  if (value === null || value === undefined) return '';\n  return String(value).trim();\n}\n\nconst packets = packetItems.map((item, index) => {\n  const f = item.json.fields || {};\n  return {\n    index: index + 1,\n    packetRecordId: item.json.id,\n    sourcePacketName: text(f['Source Packet Name']),\n    processingStatus: text(f['Processing Status']),\n    useInDraft: Boolean(f['Use in Draft?']),\n    readyToGenerateDraft: Boolean(f['Ready to Generate Draft?']),\n    articleRecordId: text(f['Article Record ID']),\n    verifiedFacts: text(f['Verified Facts']),\n    quoteCandidates: text(f['Quote Candidates']),\n    sourceMeaningToRecast: text(f['Source Meaning to Recast']),\n    editorialUseNotes: text(f['Editorial Use Notes']),\n    promptReadyExtract: text(f['Prompt-Ready Extract']),\n  };\n});\n\nconst packetContext = packets.map((p) => [\n  `SOURCE PACKET ${p.index}: ${p.sourcePacketName || p.packetRecordId}`,\n  `Verified facts:\\n${p.verifiedFacts || 'None'}`,\n  `Quote candidates:\\n${p.quoteCandidates || 'None'}`,\n  `Source meaning to recast:\\n${p.sourceMeaningToRecast || 'None'}`,\n  `Editorial use notes:\\n${p.editorialUseNotes || 'None'}`,\n  `Prompt-ready extract:\\n${p.promptReadyExtract || 'None'}`,\n].join('\\n\\n')).join('\\n\\n---\\n\\n');\n\nconst sourceArticleAnalysisPrompt = `\nCreate a Source Article Analysis record for this BAAD article candidate.\n\nARTICLE:\nRecord ID: ${article.articleRecordId}\nTitle: ${article.title}\nDek: ${article.dek}\nCategory: ${article.category}\nBAAD Publish Categories: ${article.baadPublishCategories.join(', ')}\nNews Topic: ${article.newsTopic}\nArtist / Entity Names: ${article.artistEntityNames}\nArtist Candidates: ${article.artistCandidates}\nSource URL: ${article.sourceUrl}\nSource Outlet: ${article.sourceOutlet}\n\nARTICLE SOURCE SUMMARY / BODY:\n${article.sourceBodySummary || 'Not provided'}\n\nSOURCES COMBINED FOR LLM:\n${article.sourcesCombined || article.llmBlockFromSources || 'Not provided'}\n\nAPPROVED BAAD SOURCE PACKETS:\n${packetContext || 'No approved Source Packets were found. If source evidence is insufficient, mark human review.'}\n\nReturn JSON only, with exactly these keys:\n\n{\n  \"sourceArticleSummary\": \"\",\n  \"primaryScenario\": \"\",\n  \"secondaryScenario\": \"\",\n  \"mainArticleShape\": \"\",\n  \"articleFocusType\": \"\",\n  \"articlePurpose\": \"\",\n  \"currentExhibitionOrProject\": \"\",\n  \"exhibitionProjectNames\": \"\",\n  \"venueInstitutionNames\": \"\",\n  \"datesMentioned\": \"\",\n  \"timelinessHookType\": \"\",\n  \"timelinessHookDetails\": \"\",\n  \"specificArtworkFocus\": \"\",\n  \"specificArtworkTitles\": \"\",\n  \"artworkPartOfExhibitionProject\": \"\",\n  \"artistSubjectNames\": \"\",\n  \"leadWith\": \"\",\n  \"mentionExhibitionInDraft\": \"\",\n  \"mentionSpecificArtworkInDraft\": \"\",\n  \"quoteWorthPreserving\": \"\",\n  \"bestQuoteToPreserve\": \"\",\n  \"whyQuoteMatters\": \"\",\n  \"bestBAADAngle\": \"\",\n  \"whyThisMattersForBAAD\": \"\",\n  \"mustPreserve\": \"\",\n  \"avoidOveremphasising\": \"\",\n  \"recommendedBAADBlueprint\": \"\",\n  \"recommendedBAADArticleShape\": \"\",\n  \"needsHumanReview\": true,\n  \"humanReviewReason\": \"\",\n  \"analysisStatus\": \"Complete\",\n  \"baadCategories\": [],\n  \"mediaFilmHook\": \"\",\n  \"mediaScenario\": \"\",\n  \"mediaType\": \"\",\n  \"filmVideoTitle\": \"\",\n  \"filmVideoPlatform\": \"\",\n  \"mentionFilmInDraft\": \"\",\n  \"filmAsMainHookOrSecondaryHook\": \"\",\n  \"filmMediaNotes\": \"\",\n  \"multiArtistArticle\": \"\",\n  \"artistRelationshipType\": \"\",\n  \"baadAnchorArtists\": \"\",\n  \"nonAnchorArtists\": \"\",\n  \"framingBalance\": \"\",\n  \"mentionNonAnchorArtist\": \"\",\n  \"nonAnchorFramingNote\": \"\",\n  \"baadAnchorOpeningRule\": \"\"\n}\n\nAirtable-valid values:\n\nprimaryScenario:\n- Visual artist spotlight\n- Exhibition / project spotlight\n- Artwork-led article\n- Material / process story\n- Cultural / historical memory story\n- Public art / installation story\n- Book / publication story\n- Design / object story\n- Event / opportunity brief\n- Other / unclear\n\nmainArticleShape:\n- artist practice spotlight\n- exhibition/project spotlight\n- artwork-led spotlight\n- material/process spotlight\n- cultural memory/history spotlight\n- book/publication spotlight\n- design spotlight\n- public art/installation spotlight\n- event/opportunity brief\n- unclear\n\narticleFocusType:\n- artist practice\n- specific artwork\n- exhibition/project\n- material/process\n- cultural memory/history\n- book/publication\n- design object/project\n- public art/installation\n- event/opportunity\n- unclear\n- site-specific sound installation\n\nyes/no style fields must use only:\n- Yes\n- No\n- Partial\n- Briefly\n- Unclear\ndepending on the exact field.\n\nleadWith:\n- visual detail\n- material/process\n- artist\n- artwork\n- exhibition/project\n- quote\n- venue/institution\n- cultural context\n- unclear\n- site/sound/spatial experience\n\nrecommendedBAADBlueprint:\n- BAAD Short Visual Art Spotlight\n- BAAD Short Visual Design Spotlight\n- BAAD Exhibition / Project Spotlight\n- BAAD Artwork-Led Spotlight\n- BAAD Material Practice Spotlight\n- BAAD Cultural / Historical Memory Spotlight\n- BAAD Public Art / Installation Spotlight\n- BAAD Book / Publication Spotlight\n- BAAD Event / Opportunity Brief\n- Needs Human Review\n\nanalysisStatus:\n- Complete\n- Needs Review\n\nmediaFilmHook:\n- Yes\n- No\n- Unclear\n\nmediaScenario:\n- Artist film / documentary spotlight\n- Art21 segment\n- Studio visit film\n- Artist interview video\n- Museum video feature\n- Performance documentation\n- Art film\n- Film review / cinema article\n- No media scenario\n- Unclear\n\nmediaType:\n- Art21 segment\n- documentary\n- short film\n- artist interview video\n- studio visit film\n- performance documentation\n- museum video\n- gallery video\n- YouTube film\n- other\n- unclear\n\nfilmAsMainHookOrSecondaryHook:\n- Main hook\n- Secondary hook\n- Access note only\n- No film hook\n- Unclear\n\nmultiArtistArticle:\n- Yes\n- No\n- Unclear\n\nartistRelationshipType:\n- solo artist\n- duo / two-person exhibition\n- collaborative duo\n- group exhibition\n- artist collective\n- artist + curator\n- artist + institution\n- unclear\n- solo exhibition\n\nframingBalance:\n- BAAD-anchor led\n- equal duo framing\n- project-led with BAAD anchor emphasis\n- group overview with BAAD anchor emphasis\n- needs human review\n- single BAAD-anchor artist\n\nmentionNonAnchorArtist:\n- Yes\n- No\n- Briefly\n- Equal framing\n- Unclear\n\nRules:\n- Use approved Source Packets as the highest-priority evidence layer.\n- Use Article Sources as supporting context.\n- Do not invent missing facts.\n- If no approved Source Packets are available, set needsHumanReview to true unless Article Sources are strong enough.\n- If the article concerns a current exhibition/project, identify names, venue, dates, artist, and why it matters.\n- If the article concerns multiple artists, apply BAAD-anchor framing carefully and avoid implying sole authorship.\n- If the material is high-copying-risk, explain what to avoid.\n- Must Preserve should contain only source-backed facts or constraints.\n- Avoid Overemphasising should warn against weak claims, unsupported interpretation, promotional framing, or misleading focus.\n`.trim();\n\nreturn [{\n  json: {\n    ...article,\n    packets,\n    sourcePacketsCount: packets.length,\n    sourceArticleAnalysisPrompt,\n  },\n}];"
+      },
+      "id": "c62b2b7b-ac72-4d00-b3ce-ed5b83430d35",
+      "name": "Build Source Article Analysis Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.5",
+          "mode": "list",
+          "cachedResultName": "GPT-5.5"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are BAAD's Source Article Analysis editor for Black Art & Design.\n\nYour task is to analyse an article candidate using verified source material and approved BAAD Source Packets.\n\nYou must not write the article.\n\nYou must return strict JSON only.\n\nUse the source material to decide:\n- what kind of BAAD article this should become\n- what facts are safe to preserve\n- what angle BAAD should take\n- what should not be overemphasised\n- whether human review is needed before drafting\n- whether the article should be framed around an artist, exhibition, artwork, material/process, film/media, public installation, book/publication, or opportunity\n\nNever invent facts.\nNever create unsupported career claims.\nNever turn promotional language into BAAD opinion.\nNever copy source phrasing.\nIf the source material is thin, ambiguous, sensitive, or too promotional, set needsHumanReview to true."
+            },
+            {
+              "content": "={{ $json.sourceArticleAnalysisPrompt }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1300,
+        0
+      ],
+      "id": "d93d752a-55e0-4ae4-a2b4-0e4df9f7500b",
+      "name": "OpenAI – Create Source Article Analysis",
+      "credentials": {
+        "openAiApi": {
+          "id": "a8Ljw4P8mCHowAbj",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $('Build Source Article Analysis Prompt').first().json;\n\nconst output = $json.output;\nlet text = '';\n\nif (Array.isArray(output)) {\n  const message = output.find(o => o.type === 'message') || output[0];\n  const content = message?.content || [];\n  const textPart = Array.isArray(content)\n    ? content.find(c => c.type === 'output_text') || content[0]\n    : null;\n  text = textPart?.text || '';\n}\n\nif (!text && typeof $json.text === 'string') text = $json.text;\nif (!text && typeof $json.output === 'string') text = $json.output;\n\nif (!text) {\n  throw new Error('Could not find OpenAI output text.');\n}\n\ntext = text\n  .trim()\n  .replace(/^\\`\\`\\`json\\s*/i, '')\n  .replace(/^\\`\\`\\`\\s*/i, '')\n  .replace(/\\`\\`\\`$/i, '')\n  .trim();\n\nlet raw;\ntry {\n  raw = JSON.parse(text);\n} catch (err) {\n  throw new Error(`Could not parse Source Article Analysis JSON: ${err.message}\\n\\nRaw text:\\n${text}`);\n}\n\nfunction cleanText(value) {\n  if (Array.isArray(value)) return value.filter(Boolean).join('\\n');\n  if (value === null || value === undefined) return '';\n  return String(value).trim();\n}\n\nfunction oneOf(value, allowed, fallback) {\n  const text = cleanText(value);\n  return allowed.includes(text) ? text : fallback;\n}\n\nfunction bool(value) {\n  return value === true || value === 'true';\n}\n\nconst yesNoUnclear = ['Yes', 'No', 'Unclear'];\nconst yesNoPartialUnclear = ['Yes', 'No', 'Partial', 'Unclear'];\nconst yesNoBrieflyUnclear = ['Yes', 'No', 'Briefly', 'Unclear'];\n\nconst analysis = {\n  sourceArticleSummary: cleanText(raw.sourceArticleSummary),\n  primaryScenario: oneOf(raw.primaryScenario, [\n    'Visual artist spotlight',\n    'Exhibition / project spotlight',\n    'Artwork-led article',\n    'Material / process story',\n    'Cultural / historical memory story',\n    'Public art / installation story',\n    'Book / publication story',\n    'Design / object story',\n    'Event / opportunity brief',\n    'Other / unclear',\n  ], 'Other / unclear'),\n  secondaryScenario: cleanText(raw.secondaryScenario),\n  mainArticleShape: oneOf(raw.mainArticleShape, [\n    'artist practice spotlight',\n    'exhibition/project spotlight',\n    'artwork-led spotlight',\n    'material/process spotlight',\n    'cultural memory/history spotlight',\n    'book/publication spotlight',\n    'design spotlight',\n    'public art/installation spotlight',\n    'event/opportunity brief',\n    'unclear',\n  ], 'unclear'),\n  articleFocusType: oneOf(raw.articleFocusType, [\n    'artist practice',\n    'specific artwork',\n    'exhibition/project',\n    'material/process',\n    'cultural memory/history',\n    'book/publication',\n    'design object/project',\n    'public art/installation',\n    'event/opportunity',\n    'unclear',\n    'site-specific sound installation',\n  ], 'unclear'),\n  articlePurpose: cleanText(raw.articlePurpose),\n  currentExhibitionOrProject: oneOf(raw.currentExhibitionOrProject, yesNoUnclear, 'Unclear'),\n  exhibitionProjectNames: cleanText(raw.exhibitionProjectNames),\n  venueInstitutionNames: cleanText(raw.venueInstitutionNames),\n  datesMentioned: cleanText(raw.datesMentioned),\n  timelinessHookType: oneOf(raw.timelinessHookType, [\n    'current exhibition',\n    'current project',\n    'current book/publication',\n    'event/opportunity',\n    'artist practice only',\n    'none',\n    'unclear',\n    'current exhibition / commission',\n  ], 'unclear'),\n  timelinessHookDetails: cleanText(raw.timelinessHookDetails),\n  specificArtworkFocus: oneOf(raw.specificArtworkFocus, yesNoPartialUnclear, 'Unclear'),\n  specificArtworkTitles: cleanText(raw.specificArtworkTitles),\n  artworkPartOfExhibitionProject: oneOf(raw.artworkPartOfExhibitionProject, yesNoPartialUnclear, 'Unclear'),\n  artistSubjectNames: cleanText(raw.artistSubjectNames),\n  leadWith: oneOf(raw.leadWith, [\n    'visual detail',\n    'material/process',\n    'artist',\n    'artwork',\n    'exhibition/project',\n    'quote',\n    'venue/institution',\n    'cultural context',\n    'unclear',\n    'site/sound/spatial experience',\n  ], 'unclear'),\n  mentionExhibitionInDraft: oneOf(raw.mentionExhibitionInDraft, yesNoBrieflyUnclear, 'Unclear'),\n  mentionSpecificArtworkInDraft: oneOf(raw.mentionSpecificArtworkInDraft, yesNoBrieflyUnclear, 'Unclear'),\n  quoteWorthPreserving: oneOf(raw.quoteWorthPreserving, yesNoUnclear, 'Unclear'),\n  bestQuoteToPreserve: cleanText(raw.bestQuoteToPreserve),\n  whyQuoteMatters: cleanText(raw.whyQuoteMatters),\n  bestBAADAngle: cleanText(raw.bestBAADAngle),\n  whyThisMattersForBAAD: cleanText(raw.whyThisMattersForBAAD),\n  mustPreserve: cleanText(raw.mustPreserve),\n  avoidOveremphasising: cleanText(raw.avoidOveremphasising),\n  recommendedBAADBlueprint: oneOf(raw.recommendedBAADBlueprint, [\n    'BAAD Short Visual Art Spotlight',\n    'BAAD Short Visual Design Spotlight',\n    'BAAD Exhibition / Project Spotlight',\n    'BAAD Artwork-Led Spotlight',\n    'BAAD Material Practice Spotlight',\n    'BAAD Cultural / Historical Memory Spotlight',\n    'BAAD Public Art / Installation Spotlight',\n    'BAAD Book / Publication Spotlight',\n    'BAAD Event / Opportunity Brief',\n    'Needs Human Review',\n  ], 'Needs Human Review'),\n  recommendedBAADArticleShape: cleanText(raw.recommendedBAADArticleShape),\n  needsHumanReview: bool(raw.needsHumanReview),\n  humanReviewReason: cleanText(raw.humanReviewReason),\n  analysisStatus: oneOf(raw.analysisStatus, ['Complete', 'Needs Review'], bool(raw.needsHumanReview) ? 'Needs Review' : 'Complete'),\n  baadCategories: Array.isArray(raw.baadCategories) && raw.baadCategories.length\n    ? raw.baadCategories.filter(v => ['Art', 'Design', 'Film', 'Books', 'Architecture', 'Fashion', 'Performance', 'Photography'].includes(v))\n    : original.baadPublishCategories,\n  mediaFilmHook: oneOf(raw.mediaFilmHook, yesNoUnclear, 'Unclear'),\n  mediaScenario: oneOf(raw.mediaScenario, [\n    'Artist film / documentary spotlight',\n    'Art21 segment',\n    'Studio visit film',\n    'Artist interview video',\n    'Museum video feature',\n    'Performance documentation',\n    'Art film',\n    'Film review / cinema article',\n    'No media scenario',\n    'Unclear',\n  ], 'Unclear'),\n  mediaType: oneOf(raw.mediaType, [\n    'Art21 segment',\n    'documentary',\n    'short film',\n    'artist interview video',\n    'studio visit film',\n    'performance documentation',\n    'museum video',\n    'gallery video',\n    'YouTube film',\n    'other',\n    'unclear',\n  ], 'unclear'),\n  filmVideoTitle: cleanText(raw.filmVideoTitle),\n  filmVideoPlatform: cleanText(raw.filmVideoPlatform),\n  mentionFilmInDraft: oneOf(raw.mentionFilmInDraft, yesNoBrieflyUnclear, 'Unclear'),\n  filmAsMainHookOrSecondaryHook: oneOf(raw.filmAsMainHookOrSecondaryHook, [\n    'Main hook',\n    'Secondary hook',\n    'Access note only',\n    'No film hook',\n    'Unclear',\n  ], 'Unclear'),\n  filmMediaNotes: cleanText(raw.filmMediaNotes),\n  multiArtistArticle: oneOf(raw.multiArtistArticle, yesNoUnclear, 'Unclear'),\n  artistRelationshipType: oneOf(raw.artistRelationshipType, [\n    'solo artist',\n    'duo / two-person exhibition',\n    'collaborative duo',\n    'group exhibition',\n    'artist collective',\n    'artist + curator',\n    'artist + institution',\n    'unclear',\n    'solo exhibition',\n  ], 'unclear'),\n  baadAnchorArtists: cleanText(raw.baadAnchorArtists),\n  nonAnchorArtists: cleanText(raw.nonAnchorArtists),\n  framingBalance: oneOf(raw.framingBalance, [\n    'BAAD-anchor led',\n    'equal duo framing',\n    'project-led with BAAD anchor emphasis',\n    'group overview with BAAD anchor emphasis',\n    'needs human review',\n    'single BAAD-anchor artist',\n  ], 'needs human review'),\n  mentionNonAnchorArtist: oneOf(raw.mentionNonAnchorArtist, ['Yes', 'No', 'Briefly', 'Equal framing', 'Unclear'], 'Unclear'),\n  nonAnchorFramingNote: cleanText(raw.nonAnchorFramingNote),\n  baadAnchorOpeningRule: cleanText(raw.baadAnchorOpeningRule),\n};\n\nconst analysisName = [\n  'Source Analysis',\n  original.title || original.sourceOutlet || 'Untitled Article',\n].filter(Boolean).join(' — ').slice(0, 250);\n\nreturn {\n  ...original,\n  analysisName,\n  sourceTitle: original.title,\n  analysis,\n};"
+      },
+      "id": "bacaed4b-8b39-4053-ae9f-4c1e1927a52f",
+      "name": "Parse Source Article Analysis JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app8xeAssDR2qaNAC",
+          "mode": "list",
+          "cachedResultName": " BAAD Articles",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblYUDKQuOTnOhHSk",
+          "mode": "list",
+          "cachedResultName": "Source Article Analysis",
+          "cachedResultUrl": "https://airtable.com/app8xeAssDR2qaNAC/tblYUDKQuOTnOhHSk"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Analysis Name": "={{ $json.analysisName }}",
+            "Article": "={{ [$json.articleRecordId] }}",
+            "Source URL": "={{ $json.sourceUrl }}",
+            "Source Outlet": "={{ $json.sourceOutlet }}",
+            "Source Title": "={{ $json.sourceTitle }}",
+            "Source Article Summary": "={{ $json.analysis.sourceArticleSummary }}",
+            "Primary Scenario": "={{ $json.analysis.primaryScenario }}",
+            "Secondary Scenario": "={{ $json.analysis.secondaryScenario }}",
+            "Main Article Shape": "={{ $json.analysis.mainArticleShape }}",
+            "Article Focus Type": "={{ $json.analysis.articleFocusType }}",
+            "Article Purpose": "={{ $json.analysis.articlePurpose }}",
+            "Current Exhibition or Project?": "={{ $json.analysis.currentExhibitionOrProject }}",
+            "Exhibition / Project Names": "={{ $json.analysis.exhibitionProjectNames }}",
+            "Venue / Institution Names": "={{ $json.analysis.venueInstitutionNames }}",
+            "Dates Mentioned": "={{ $json.analysis.datesMentioned }}",
+            "Timeliness Hook Type": "={{ $json.analysis.timelinessHookType }}",
+            "Timeliness Hook Details": "={{ $json.analysis.timelinessHookDetails }}",
+            "Specific Artwork Focus?": "={{ $json.analysis.specificArtworkFocus }}",
+            "Specific Artwork Titles": "={{ $json.analysis.specificArtworkTitles }}",
+            "Artwork Part of Exhibition/Project?": "={{ $json.analysis.artworkPartOfExhibitionProject }}",
+            "Artist / Subject Names": "={{ $json.analysis.artistSubjectNames }}",
+            "Lead With": "={{ $json.analysis.leadWith }}",
+            "Mention Exhibition in Draft?": "={{ $json.analysis.mentionExhibitionInDraft }}",
+            "Mention Specific Artwork in Draft?": "={{ $json.analysis.mentionSpecificArtworkInDraft }}",
+            "Quote Worth Preserving?": "={{ $json.analysis.quoteWorthPreserving }}",
+            "Best Quote to Preserve": "={{ $json.analysis.bestQuoteToPreserve }}",
+            "Why Quote Matters": "={{ $json.analysis.whyQuoteMatters }}",
+            "Best BAAD Angle": "={{ $json.analysis.bestBAADAngle }}",
+            "Why This Matters for BAAD": "={{ $json.analysis.whyThisMattersForBAAD }}",
+            "Must Preserve": "={{ $json.analysis.mustPreserve }}",
+            "Avoid Overemphasising": "={{ $json.analysis.avoidOveremphasising }}",
+            "Recommended BAAD Blueprint": "={{ $json.analysis.recommendedBAADBlueprint }}",
+            "Recommended BAAD Article Shape": "={{ $json.analysis.recommendedBAADArticleShape }}",
+            "Needs Human Review?": "={{ $json.analysis.needsHumanReview }}",
+            "Human Review Reason": "={{ $json.analysis.humanReviewReason }}",
+            "Analysis Status": "={{ $json.analysis.analysisStatus }}",
+            "Analysis JSON": "={{ JSON.stringify($json.analysis, null, 2) }}",
+            "Created by Automation": true,
+            "BAAD Categories": "={{ $json.analysis.baadCategories }}",
+            "Media / Film Hook?": "={{ $json.analysis.mediaFilmHook }}",
+            "Media Scenario": "={{ $json.analysis.mediaScenario }}",
+            "Media Type": "={{ $json.analysis.mediaType }}",
+            "Film / Video Title": "={{ $json.analysis.filmVideoTitle }}",
+            "Film / Video Platform": "={{ $json.analysis.filmVideoPlatform }}",
+            "Mention Film in Draft?": "={{ $json.analysis.mentionFilmInDraft }}",
+            "Film as Main Hook or Secondary Hook?": "={{ $json.analysis.filmAsMainHookOrSecondaryHook }}",
+            "Film / Media Notes": "={{ $json.analysis.filmMediaNotes }}",
+            "Multi-Artist Article?": "={{ $json.analysis.multiArtistArticle }}",
+            "Artist Relationship Type": "={{ $json.analysis.artistRelationshipType }}",
+            "BAAD Anchor Artist(s)": "={{ $json.analysis.baadAnchorArtists }}",
+            "Non-Anchor Artist(s)": "={{ $json.analysis.nonAnchorArtists }}",
+            "Framing Balance": "={{ $json.analysis.framingBalance }}",
+            "Mention Non-Anchor Artist?": "={{ $json.analysis.mentionNonAnchorArtist }}",
+            "Non-Anchor Framing Note": "={{ $json.analysis.nonAnchorFramingNote }}",
+            "BAAD-Anchor Opening Rule": "={{ $json.analysis.baadAnchorOpeningRule }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1820,
+        0
+      ],
+      "id": "d73ed268-6262-43d6-842a-22b541076e74",
+      "name": "Create Source Article Analysis",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Itjn8Jfb2OvzlPzN",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Articles Ready for Source Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Articles Ready for Source Analysis": {
+      "main": [
+        [
+          {
+            "node": "Prepare Article Analysis Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Article Analysis Context": {
+      "main": [
+        [
+          {
+            "node": "Get Approved Source Packets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Approved Source Packets": {
+      "main": [
+        [
+          {
+            "node": "Build Source Article Analysis Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Source Article Analysis Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI – Create Source Article Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI – Create Source Article Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse Source Article Analysis JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Source Article Analysis JSON": {
+      "main": [
+        [
+          {
+            "node": "Create Source Article Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ef8d75ed-fd77-49ce-a20f-0d6792147323",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea8024dc22668e502814432e3d34bbaa598b9ebab50b7f5fcbebdfc6c7a2344e"
+  },
+  "id": "",
+  "tags": []
+}
