@@ -1,5 +1,5 @@
 {
-  "name": "Generate BAAD Draft – Manual Blueprint Override Candidate",
+  "name": "Generate BAAD Draft – Manual Blueprint Override Candidate – Checkbox Reset Fix",
   "nodes": [
     {
       "parameters": {
@@ -123,7 +123,7 @@
             "Last Error Step": "={{ $json.lastErrorStepClear }}",
             "Final BAAD Blueprint Used": "={{ $json.finalBaadBlueprintUsed ? [$json.finalBaadBlueprintUsed] : [] }}",
             "Blueprint Selection Source": "={{ $json.blueprintSelectionSource || 'Not Selected' }}",
-            "Blueprint Selection Notes": "={{ $json.blueprintSelectionNotes || '' }}"
+            "Blueprint Selection Notes": "={{ ($json.blueprintSelectionNotes || '') + ' | Workflow version: checkbox-reset-fix.' }}"
           },
           "matchingColumns": [
             "id"
