@@ -110,7 +110,7 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Generate Draft?": "={{ false }}",
+            "Generate Draft?": false,
             "Body (BAAD Draft)": "={{ ($json.baad_body || '').trim() }}",
             "BAAD Title": "={{ ($json.baad_title || '').trim() }}",
             "BAAD Dek": "={{ ($json.baad_dek || '').trim() }}",
