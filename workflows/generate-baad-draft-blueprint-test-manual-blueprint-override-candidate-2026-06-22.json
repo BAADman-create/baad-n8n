@@ -1,5 +1,5 @@
 {
-  "name": "Generate BAAD Draft – Manual Blueprint Override Candidate – Checkbox Reset String Fix",
+  "name": "Generate BAAD Draft – Manual Blueprint Override Candidate – Final Checkbox API Cleanup",
   "nodes": [
     {
       "parameters": {
@@ -123,7 +123,7 @@
             "Last Error Step": "={{ $json.lastErrorStepClear }}",
             "Final BAAD Blueprint Used": "={{ $json.finalBaadBlueprintUsed ? [$json.finalBaadBlueprintUsed] : [] }}",
             "Blueprint Selection Source": "={{ $json.blueprintSelectionSource || 'Not Selected' }}",
-            "Blueprint Selection Notes": "={{ ($json.blueprintSelectionNotes || '') + ' | Workflow version: checkbox-reset-string-fix.' }}"
+            "Blueprint Selection Notes": "={{ ($json.blueprintSelectionNotes || '') + ' | Workflow version: final-checkbox-api-cleanup.' }}"
           },
           "matchingColumns": [
             "id"
@@ -9823,6 +9823,37 @@
           "name": "Airtable Personal Access Token account"
         }
       }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/app8xeAssDR2qaNAC/tblF0ghefGC2Bzh9K/{{$json.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.AIRTABLE_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { fields: { \"Generate Draft?\": false }, typecast: true } }}",
+        "options": {}
+      },
+      "id": "clear-generate-draft-checkbox-final-api-cleanup",
+      "name": "Clear Generate Draft Checkbox",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7040,
+        -256
+      ]
     }
   ],
   "pinData": {},
@@ -10324,6 +10355,17 @@
         [
           {
             "node": "Check Source Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Article with BAAD Draft": {
+      "main": [
+        [
+          {
+            "node": "Clear Generate Draft Checkbox",
             "type": "main",
             "index": 0
           }
