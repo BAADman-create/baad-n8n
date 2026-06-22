@@ -1,5 +1,5 @@
 {
-  "name": "Generate BAAD Draft – Manual Blueprint Override Candidate – Checkbox Reset Fix",
+  "name": "Generate BAAD Draft – Manual Blueprint Override Candidate – Checkbox Reset String Fix",
   "nodes": [
     {
       "parameters": {
@@ -110,7 +110,7 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Generate Draft?": false,
+            "Generate Draft?": "false",
             "Body (BAAD Draft)": "={{ ($json.baad_body || '').trim() }}",
             "BAAD Title": "={{ ($json.baad_title || '').trim() }}",
             "BAAD Dek": "={{ ($json.baad_dek || '').trim() }}",
@@ -123,7 +123,7 @@
             "Last Error Step": "={{ $json.lastErrorStepClear }}",
             "Final BAAD Blueprint Used": "={{ $json.finalBaadBlueprintUsed ? [$json.finalBaadBlueprintUsed] : [] }}",
             "Blueprint Selection Source": "={{ $json.blueprintSelectionSource || 'Not Selected' }}",
-            "Blueprint Selection Notes": "={{ ($json.blueprintSelectionNotes || '') + ' | Workflow version: checkbox-reset-fix.' }}"
+            "Blueprint Selection Notes": "={{ ($json.blueprintSelectionNotes || '') + ' | Workflow version: checkbox-reset-string-fix.' }}"
           },
           "matchingColumns": [
             "id"
@@ -1423,7 +1423,7 @@
               "removed": false
             }
           ],
-          "attemptToConvertTypes": false,
+          "attemptToConvertTypes": true,
           "convertFieldsToString": false
         },
         "options": {}
