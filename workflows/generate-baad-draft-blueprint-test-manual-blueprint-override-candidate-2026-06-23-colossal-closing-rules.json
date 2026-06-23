@@ -971,6 +971,10 @@
                 {
                   "name": "Needs Human Review",
                   "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
                 }
               ],
               "readOnly": false,
@@ -2352,6 +2356,22 @@
                 {
                   "name": "Published",
                   "value": "Published"
+                },
+                {
+                  "name": "Needs Category",
+                  "value": "Needs Category"
+                },
+                {
+                  "name": "Ready for Source Analysis",
+                  "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
                 }
               ],
               "readOnly": false,
@@ -3642,6 +3662,18 @@
                 {
                   "name": "Needs Category",
                   "value": "Needs Category"
+                },
+                {
+                  "name": "Ready for Source Analysis",
+                  "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
                 }
               ],
               "readOnly": false,
@@ -5286,6 +5318,14 @@
                 {
                   "name": "Ready for Source Analysis",
                   "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
                 }
               ],
               "readOnly": false,
@@ -6565,6 +6605,14 @@
                 {
                   "name": "Ready for Source Analysis",
                   "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
                 }
               ],
               "readOnly": false,
@@ -7951,6 +7999,14 @@
                 {
                   "name": "Ready for Source Analysis",
                   "value": "Ready for Source Analysis"
+                },
+                {
+                  "name": "Needs Human Review",
+                  "value": "Needs Human Review"
+                },
+                {
+                  "name": "Pushed to Strapi",
+                  "value": "Pushed to Strapi"
                 }
               ],
               "readOnly": false,
