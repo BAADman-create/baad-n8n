@@ -74,3 +74,56 @@ Next fields to review and patch:
 ## Important guardrail
 
 Do not mark this blueprint or its structure maps as Ready for Prompt Use until the blueprint has been tested against at least one BAAD-relevant photography source.
+
+## Second blueprint patch — remaining fields strengthened
+
+After the first checkpoint, the remaining Photography / Visual Culture blueprint fields were strengthened.
+
+Updated fields:
+
+- Word Choice Rules
+- Tone Rules
+- Source Material Requirements
+- Quote Rules
+- Descriptive / Informative / Emotional Balance
+
+## Final field audit
+
+Final audit confirmed:
+
+- Linked Structure Map Count: 5
+- Photographer’s search: true
+- Repeated subject: true
+- Place / architecture / atmosphere: true
+- Historical or social role: true
+- Everyday observation / chance encounter: true
+- Do not treat photographs as generic illustrations: true
+- Use in test workflows only: true
+- Use quotes sparingly: true
+- Use only verified source facts: true
+- Do not invent camera type: true
+- Avoid generic photography praise: true
+- Lead with visual description and clear information: true
+
+## Current blueprint status after patch
+
+The Photography / Visual Culture Article blueprint is now a stronger Draft v1, but it is still not approved for live production.
+
+It should remain:
+
+- Blueprint Status: Draft
+- Ready for live prompt use: No
+- Structure Maps Ready for Prompt Use?: false
+
+## Next required step before approval
+
+Test the blueprint against at least one BAAD-relevant photography source.
+
+The test should check whether the draft:
+
+- Opens through the strongest photographic engine
+- Avoids generic photography praise
+- Keeps photography central rather than treating images as illustration
+- Uses source-supported context only
+- Avoids unsupported biography, camera details, awards, reputation, or historical claims
+- Closes lightly without visitor-logistics clutter
