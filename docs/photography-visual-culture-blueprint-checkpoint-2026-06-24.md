@@ -127,3 +127,35 @@ The test should check whether the draft:
 - Uses source-supported context only
 - Avoids unsupported biography, camera details, awards, reputation, or historical claims
 - Closes lightly without visitor-logistics clutter
+
+## Notion documentation
+
+A dedicated Notion documentation page was created for this blueprint work.
+
+- Notion page title: Photography / Visual Culture Blueprint — Draft v1
+- Notion page ID: 38916598-b06e-814d-b9d1-cdd402c423cb
+- Notion URL: https://app.notion.com/p/Photography-Visual-Culture-Blueprint-Draft-v1-38916598b06e814db9d1cdd402c423cb
+
+The Notion page documents:
+
+- Purpose of the Photography / Visual Culture Article blueprint
+- The five photography engines
+- Airtable blueprint record ID
+- Five linked Structure / Meaning Maps
+- Style Reference medium/form filtering work
+- Xie Lei duplicate cleanup
+- Strengthened blueprint fields
+- Guardrails
+- Repo checkpoints
+- Required BAAD-relevant test before approval
+
+Verification confirmed:
+
+- Block count fetched: 68
+- The Five Photography Engines: true
+- Linked Structure / Meaning Maps: true
+- Style References Supporting the Blueprint: true
+- Medium / Form Filtering Work: true
+- Duplicate Cleanup: true
+- Blueprint Fields Strengthened: true
+- Next Required Test Before Approval: true
