@@ -159,3 +159,83 @@ Verification confirmed:
 - Duplicate Cleanup: true
 - Blueprint Fields Strengthened: true
 - Next Required Test Before Approval: true
+
+## Dedicated Photography Style Analysis layer
+
+A dedicated sentence / wording / paragraph-rhythm layer was added using the existing Airtable `Style Analysis` table.
+
+Airtable table:
+
+- Table name: Style Analysis
+- Table ID: tblyFlzXnNU5qawwL
+
+Purpose:
+
+This layer sits between `Style References` and `BAAD Style Blueprints`.
+
+It analyses how reference articles work at the level of:
+
+- Opening pattern
+- Sentence structure
+- Word choice
+- Descriptive language
+- Informative language
+- Emotional tone
+- Paragraph structure
+- Transition pattern
+- Closing pattern
+- Narrative flow
+- Quote usage
+- Reusable BAAD lessons
+- Do-not-copy notes
+
+## New Photography Style Analysis records
+
+Five dedicated Photography / Visual Culture Style Analysis records were created and linked to the Photography / Visual Culture Article blueprint `recf8B54P2oS3PcHY`.
+
+1. `rec89OvMqMRxiCFY7`  
+   Photography Style Analysis — Brendon Burton — Photographer’s Search  
+   Linked Style Reference: `recMmae5lStv50Rti`
+
+2. `recOyze2JtKKByEoh`  
+   Photography Style Analysis — Dave Krugman — Repeated Subject  
+   Linked Style Reference: `recIg6P1PgLozf6mH`
+
+3. `recjrdlyPoaXIvnSz`  
+   Photography Style Analysis — Black Arts Movement — Historical / Social Role  
+   Linked Style Reference: `receI4iFeaPBwAWAV`
+
+4. `recwpadWENFYooCJV`  
+   Photography Style Analysis — David Altrath — Place / Architecture / Atmosphere  
+   Linked Style Reference: `recXDph4OVpRpqUsi`
+
+5. `recLVxlOKLeaeuECa`  
+   Photography Style Analysis — Janusz Jurek — Everyday Observation / Chance Encounter  
+   Linked Style Reference: `recYm0routK2q7Fw0`
+
+All five records are currently:
+
+- Analysis Status: Draft
+- Linked Blueprint: `recf8B54P2oS3PcHY`
+
+## Verification
+
+Airtable verification confirmed:
+
+- Blueprint: Photography / Visual Culture Article
+- Blueprint ID: `recf8B54P2oS3PcHY`
+- Linked Style Analysis Count: 5
+
+## Updated layer model
+
+The Photography / Visual Culture system now uses this support stack:
+
+1. Style References — source examples
+2. Style Analysis — sentence structure, wording, paragraph rhythm
+3. Article Structure / Meaning Map — article shape and meaning movement
+4. BAAD Style Blueprint — reusable drafting instructions
+5. Draft Generation — future workflow integration
+
+## Notion follow-up required
+
+After this Style Analysis layer is committed, update Notion documentation so that the Photography / Visual Culture Blueprint page and/or Style Analysis documentation explains this new layer and how it connects to the existing Structure / Meaning Map and blueprint system.
