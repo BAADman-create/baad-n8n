@@ -373,3 +373,67 @@ Keep this record in Draft until it is reviewed and tested through the future Art
 Next micro-step:
 
 Create a linked-record field on the Articles table named Manual Reference Structure, linked to Reference Article Structures.
+
+---
+
+## Articles Field Created
+
+Created: 2026-06-26
+
+Table:
+
+Articles
+
+Table ID:
+
+tblF0ghefGC2Bzh9K
+
+Field name:
+
+Manual Reference Structure
+
+Field ID:
+
+fldzIkYMsImaW4AvQ
+
+Field type:
+
+multipleRecordLinks
+
+Linked table:
+
+Reference Article Structures
+
+Linked table ID:
+
+tbl3hZMatlwTUpjps
+
+Airtable options confirmed:
+
+- isReversed: false
+- prefersSingleRecordLink: true
+- inverseLinkFieldId: fldHdBUaiiFQ504fN
+
+Purpose:
+
+This field allows a human editor to manually select one Reference Article Structure for an article before draft generation.
+
+Macro role:
+
+This gives the Articles table a direct bridge between the current article and the new operational article-shape library.
+
+Micro workflow role:
+
+Future n8n workflow nodes should check this field before drafting. If present, the selected Reference Article Structure should override automatic structure selection and feed into the Article Structure Plan step.
+
+Next micro-step:
+
+Link the David Uzochukwu article to the first Reference Article Structure record for testing.
+
+David article:
+
+recN9pgEmgDmQoEPf
+
+Reference Structure record:
+
+recEdVr0Qdn58Uiq8
