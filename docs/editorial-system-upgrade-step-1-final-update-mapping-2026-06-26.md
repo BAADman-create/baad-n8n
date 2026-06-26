@@ -93,3 +93,39 @@ Step 5 — Add Source-Language Overlap Check
 Step 6 — Add Editorial Rhythm Check  
 Step 7 — Add automatic Notion Working Notes for complex articles  
 
+
+---
+
+## Post-Test Editorial Structure Finding
+
+After importing and testing the patched workflow on the David Uzochukwu article (`recN9pgEmgDmQoEPf`), the final Airtable update succeeded.
+
+Confirmed outputs:
+- `Review Status` saved as `Draft Generated`
+- `Generate Draft?` was cleared / unchecked
+- `BAAD Tags` saved after missing Airtable select options were created
+- `Final BAAD Blueprint Used` saved as `recf8B54P2oS3PcHY`
+- `Blueprint Selection Source` saved as `Manual Override`
+- `Blueprint Selection Notes` included `final-update-mapping-fix-2026-06-26`
+
+The test also revealed an important editorial-system gap.
+
+The generated article did not follow the manually discussed Colossal-informed opening and second paragraph for the David Uzochukwu article. This was expected because the current workflow does not yet include:
+- a `Reference Article Structures` table,
+- a selected reference structure field on the article,
+- or a pre-draft `Article Structure Plan` node.
+
+The workflow currently uses source body, source analysis, source packets, the selected BAAD blueprint, general prompt rules, validation, and polish. It does not yet know how to follow a chosen reference article architecture.
+
+This confirms the need for the next roadmap steps:
+1. Create the `Reference Article Structures` system.
+2. Add examined reference structures, starting with the Colossal Tamara Dean body/nature photography article.
+3. Add an `Article Structure Plan` step before draft generation.
+4. Feed the selected structure and generated paragraph plan into `Build Draft Prompt`.
+
+Related Notion page updated:
+David Uzochukwu — Bodies of Water Article Working Notes
+https://app.notion.com/p/David-Uzochukwu-Bodies-of-Water-Article-Working-Notes-38b16598b06e8144b57cdf37d95e62c0
+
+Follow-up reliability item:
+`BAAD Tags` should use a controlled vocabulary or filtered approved list before final Airtable update, because the n8n Airtable node can fail when the model outputs a tag option that Airtable has not seen before.
