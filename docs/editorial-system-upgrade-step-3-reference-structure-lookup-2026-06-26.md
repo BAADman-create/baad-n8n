@@ -175,3 +175,89 @@ Step 2 is complete and pushed.
 Next action:
 
 Inspect the current workflow JSON and identify the safest insertion point for the Reference Structure lookup nodes.
+
+---
+
+## Step 3 Test Result — David Uzochukwu
+
+Tested: 2026-06-26
+
+Workflow archive:
+
+workflows/generate-baad-draft-blueprint-test-manual-blueprint-override-candidate-2026-06-26-reference-structure-lookup.json
+
+Imported n8n workflow name:
+
+Generate BAAD Draft – Manual Blueprint Override Candidate – Reference Structure Lookup
+
+Test article:
+
+David Uzochukwu: Bodies of Water
+
+Article ID:
+
+recN9pgEmgDmQoEPf
+
+Manual Reference Structure field:
+
+Manual Reference Structure
+
+Linked Reference Structure record:
+
+recEdVr0Qdn58Uiq8
+
+Reference Structure name:
+
+Colossal — Tamara Dean Body/Nature Photography Structure
+
+Result:
+
+The Reference Structure lookup layer worked.
+
+Observed output included:
+
+manualReferenceStructureId:
+
+recEdVr0Qdn58Uiq8
+
+hasManualReferenceStructure:
+
+true
+
+referenceStructureApplied:
+
+true
+
+referenceStructureId:
+
+recEdVr0Qdn58Uiq8
+
+referenceStructureName:
+
+Colossal — Tamara Dean Body/Nature Photography Structure
+
+The workflow also attached:
+
+- referenceStructureFields
+- referenceStructureJson
+- referenceStructureForPrompt
+
+Conclusion:
+
+Step 3 is successful. The Generate BAAD Draft workflow can now read and fetch a selected Reference Article Structure from Airtable.
+
+Important boundary:
+
+The fetched Reference Article Structure is now available in the workflow item JSON, but Build Draft Prompt does not yet use it as a writing instruction. This is intentional. Step 3 was lookup-only.
+
+Next step:
+
+Step 4 should add an Article Structure Plan layer that uses:
+
+- source body
+- source analysis
+- BAAD style blueprint
+- source packets
+- fetched reference structure
+
+to generate a customized article plan before Build Draft Prompt.
