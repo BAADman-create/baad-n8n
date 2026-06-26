@@ -241,3 +241,100 @@ Step 3 is complete and pushed.
 Next action:
 
 Patch the current Reference Structure Lookup workflow archive to add Article Structure Plan nodes.
+
+---
+
+## Step 4 Test Result — David Uzochukwu Article
+
+Test article:
+
+- Article: `David Uzochukwu: Bodies of Water`
+- Article ID: `recN9pgEmgDmQoEPf`
+- Manual BAAD Blueprint: `recf8B54P2oS3PcHY`
+- Manual Reference Structure: `recEdVr0Qdn58Uiq8`
+- Source Analysis: `rec5KBJOz4A3d9Jef`
+- Source Packets Applied: `4`
+
+Workflow archive tested:
+
+- `generate-baad-draft-blueprint-test-manual-blueprint-override-candidate-2026-06-26-article-structure-plan.json`
+
+Result:
+
+- The Step 4 Article Structure Plan layer worked technically.
+- The workflow generated an article-specific structure plan from the selected Reference Article Structure.
+- The structure plan was attached to the draft context.
+- The Build Draft Prompt included the Article Structure Plan.
+- The generated draft passed validation.
+- Polish ran successfully.
+- Final Airtable update succeeded.
+- `Review Status` became `Draft Generated`.
+- `Generate Draft?` was cleared to `false`.
+- `BAAD Tags` were saved correctly.
+- `Final BAAD Blueprint Used` remained `recf8B54P2oS3PcHY`.
+- `Blueprint Selection Source` remained `Manual Override`.
+- `Manual Reference Structure` remained `recEdVr0Qdn58Uiq8`.
+- `Last Error` and `Last Error Step` were empty.
+
+This confirms Step 4 works as a workflow layer.
+
+## Editorial Tone Finding — Over-Compressed Poetic Opening
+
+The generated article included this opening sentence:
+
+> David Uzochukwu builds bodies for unstable water.
+
+This is a useful test failure.
+
+The sentence is not factually wrong, but it does not fit BAAD tone. It is too forceful, too compressed, and too writerly. It makes the draft sound as if the system is trying to create a poetic hook rather than writing clear, grounded BAAD editorial prose.
+
+The issue is the construction:
+
+- artist + builds/makes/creates + bodies/worlds/forms + for/against/under + abstract condition
+
+This kind of sentence can sound artificial in BAAD copy, especially when the source material is already visually and conceptually rich.
+
+Preferred BAAD direction:
+
+- Open through concrete visual description.
+- Keep the sentence natural and editorial.
+- Let the image lead without forcing metaphor.
+- Avoid dramatic compressed constructions that make the prose sound generated.
+- Prefer calmer phrasing such as:
+  - “In David Uzochukwu’s photographs, hybrid figures move through watery, mythic environments.”
+  - “David Uzochukwu imagines hybrid figures shaped by water, myth and migration.”
+  - “Across Bodies of Water, altered figures appear in surreal environments where water becomes both setting and pressure.”
+
+Follow-up prompt patch needed:
+
+Add a BAAD tone guard to the draft prompt and/or Article Structure Plan prompt that says:
+
+- Image-led does not mean over-poetic.
+- Avoid compressed metaphorical openings.
+- Do not use constructions like “builds bodies for unstable water.”
+- Keep openings visually grounded, clear, and natural.
+- Prefer direct image/action/environment phrasing over dramatic abstraction.
+
+## Additional Reporting Cleanup Reminder
+
+Later, patch the Article Structure Plan parser so it overrides the model-returned `referenceStructureUsed.id` with the real Airtable Reference Article Structure record ID.
+
+In the David test, the model returned a slug-like ID instead of the real Airtable ID:
+
+- Returned model ID: `Colossal-Tamara-Dean-Body-Nature-Photography-Structure`
+- Real Airtable ID: `recEdVr0Qdn58Uiq8`
+
+The workflow already knows the real ID upstream as `referenceStructureId`. The parser should force `referenceStructureUsed.id` to the real Airtable record ID.
+
+This is not blocking Step 4, but it will make downstream reporting cleaner.
+
+## Current Status After Step 4 Test
+
+Step 4 is technically working and ready for prompt refinement.
+
+Next action after this documentation commit:
+
+- Patch the Article Structure Plan and/or Build Draft Prompt tone rules.
+- Add a BAAD tone guard against compressed poetic openings.
+- Re-test David or another photography article to confirm the opening becomes image-led but natural.
+
