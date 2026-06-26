@@ -437,3 +437,62 @@ recN9pgEmgDmQoEPf
 Reference Structure record:
 
 recEdVr0Qdn58Uiq8
+
+---
+
+## First Article Linked To Manual Reference Structure
+
+Linked: 2026-06-26
+
+Article:
+
+David Uzochukwu: Bodies of Water
+
+Article ID:
+
+recN9pgEmgDmQoEPf
+
+Articles field:
+
+Manual Reference Structure
+
+Field ID:
+
+fldzIkYMsImaW4AvQ
+
+Linked Reference Structure:
+
+Colossal — Tamara Dean Body/Nature Photography Structure
+
+Reference Structure Record ID:
+
+recEdVr0Qdn58Uiq8
+
+Purpose:
+
+This makes David Uzochukwu the first test article for the Reference Article Structures system.
+
+Macro meaning:
+
+BAAD can now distinguish between the article type and the article shape:
+
+- Article type: Photography / Visual Culture Article
+- Article shape: Colossal — Tamara Dean Body/Nature Photography Structure
+- Evidence layer: Source Packets and Source Article Analysis
+
+Micro workflow implication:
+
+The next workflow upgrade should make n8n read the Manual Reference Structure field before drafting. If present, it should fetch the linked Reference Article Structure and use it to generate an Article Structure Plan before Build Draft Prompt.
+
+Current limitation:
+
+The field is now present in Airtable, but the Generate BAAD Draft workflow does not yet read it. The David article is linked for testing the next workflow layer, not for immediate generation.
+
+Next roadmap step:
+
+Step 3 / Step 4 should add workflow support:
+
+1. Read Manual Reference Structure from Articles.
+2. Fetch the linked Reference Article Structure.
+3. Build an Article Structure Plan.
+4. Feed that plan into Build Draft Prompt.
