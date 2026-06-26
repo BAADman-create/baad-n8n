@@ -290,3 +290,36 @@ Step 2 begins with this planning document.
 Next action:
 
 Create the Airtable Reference Article Structures table and first record.
+
+---
+
+## Airtable Table Created
+
+Created: 2026-06-26
+
+Base:
+
+app8xeAssDR2qaNAC
+
+Table name:
+
+Reference Article Structures
+
+Table ID:
+
+tbl3hZMatlwTUpjps
+
+Purpose:
+
+Operational workflow table for reusable article architecture maps. This table stores selected reference structures that n8n can eventually read directly when building a pre-draft Article Structure Plan.
+
+Relationship to existing table:
+
+- Article Structure / Meaning Map = analytical pattern/classification layer
+- Reference Article Structures = operational selectable workflow layer
+
+Next micro-step:
+
+Create the first reference structure record:
+
+Colossal — Tamara Dean Body/Nature Photography Structure
