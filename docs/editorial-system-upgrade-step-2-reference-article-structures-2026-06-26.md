@@ -323,3 +323,53 @@ Next micro-step:
 Create the first reference structure record:
 
 Colossal — Tamara Dean Body/Nature Photography Structure
+
+---
+
+## First Reference Structure Record Created
+
+Created: 2026-06-26
+
+Table:
+
+Reference Article Structures
+
+Table ID:
+
+tbl3hZMatlwTUpjps
+
+Record name:
+
+Colossal — Tamara Dean Body/Nature Photography Structure
+
+Record ID:
+
+recEdVr0Qdn58Uiq8
+
+Review Status:
+
+Draft
+
+Ready for Use?:
+
+false
+
+Purpose:
+
+This is the first operational Reference Article Structure record. It stores the paragraph architecture of a Colossal body/nature photography article so BAAD can eventually use it as a selectable article-shape model.
+
+Editorial use case:
+
+Useful for photography articles where the subject involves bodies, landscape, environment, transformation, performance, human/nonhuman relationships, or bodies becoming inseparable from surrounding conditions.
+
+David Uzochukwu relevance:
+
+This structure matches the manual editorial direction for the David Uzochukwu article better than the current workflow draft because it begins with artist/practice/concept before moving into body/environment meaning.
+
+Status note:
+
+Keep this record in Draft until it is reviewed and tested through the future Article Structure Plan layer.
+
+Next micro-step:
+
+Create a linked-record field on the Articles table named Manual Reference Structure, linked to Reference Article Structures.
